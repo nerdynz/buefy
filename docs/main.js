@@ -10,6 +10,7 @@ import Bluebird from 'bluebird'
 import hljs from 'highlight.js'
 
 import ApiView from './components/ApiView'
+import CodeView from './components/CodeView'
 
 Vue.config.productionTip = false
 
@@ -17,7 +18,11 @@ global.Promise = Bluebird
 
 Vue.prototype.$http = Axios
 
-Vue.use(Buefy)
+Vue.use(Buefy, {
+    // defaultSnackbarDuration: 999999,
+    // defaultToastDuration: 999999
+})
+
 Vue.use(VueProgressBar, {
     color: '#7957d5',
     failedColor: '#ff3860',
@@ -31,6 +36,7 @@ Vue.use(VueAnalytics, {
     router
 })
 Vue.component('ApiView', ApiView)
+Vue.component('CodeView', CodeView)
 
 Vue.directive('highlight', {
     deep: true,
@@ -75,6 +81,18 @@ Vue.filter('pre', (text) => {
     newText = newText.join('\r\n')
 
     return newText
+})
+
+Vue.filter('slugify', (value) => {
+    return value.toString()
+        .toLowerCase()
+        .replace(/\s+/g, '-') // Replace spaces with -
+        .replace(/e|é|è|ẽ|ẻ|ẹ|ê|ế|ề|ễ|ể|ệ/gi, 'e') // Fix letter E
+        .replace(/a|á|à|ã|ả|ạ|ă|ắ|ằ|ẵ|ẳ|ặ|â|ấ|ầ|ẫ|ẩ|ậ/gi, 'a') // Fix letter A
+        .replace(/o|ó|ò|õ|ỏ|ọ|ô|ố|ồ|ỗ|ổ|ộ|ơ|ớ|ờ|ỡ|ở|ợ/gi, 'o') // Fix letter O
+        .replace(/u|ú|ù|ũ|ủ|ụ|ư|ứ|ừ|ữ|ử|ự/gi, 'u') // Fix letter U
+        .replace(/[^\w-]+/g, '') // Remove all non-word chars
+        .replace(/--+/g, '-') // Replace multiple - with single -
 })
 
 /* eslint-disable no-new */

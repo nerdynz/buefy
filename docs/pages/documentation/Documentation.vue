@@ -1,6 +1,6 @@
 <template>
     <section class="documentation">
-        <app-header ref="header"></app-header>
+        <the-header ref="header" />
 
         <div class="hero is-primary">
             <div class="hero-body">
@@ -37,13 +37,15 @@
             <router-view></router-view>
         </section>
 
-        <app-footer></app-footer>
+        <the-footer />
     </section>
 </template>
 
 <script>
-    import AppHeader from '../../template/Header'
-    import AppFooter from '../../template/Footer'
+    import ClipboardMixin from '../../template/ClipboardMixin'
+
+    import TheHeader from '../../components/TheHeader'
+    import TheFooter from '../../components/TheFooter'
 
     import Installation from './installation/InstallationNav'
     import General from './general/GeneralNav'
@@ -52,9 +54,10 @@
     import DataManipulation from './data/DataNav'
 
     export default {
+        mixins: [ClipboardMixin],
         components: {
-            AppHeader,
-            AppFooter
+            TheHeader,
+            TheFooter
         },
         data() {
             return {

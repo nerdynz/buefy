@@ -1,18 +1,23 @@
 <template>
     <transition :name="transitionName">
-        <div v-show="isActive" class="tab-item">
-            <slot></slot>
+        <div v-show="isActive && visible" class="tab-item">
+            <slot/>
         </div>
     </transition>
 </template>
 
 <script>
     export default {
-        name: 'bTabItem',
+        name: 'BTabItem',
         props: {
             label: String,
             icon: String,
-            iconPack: String
+            iconPack: String,
+            disabled: Boolean,
+            visible: {
+                type: Boolean,
+                default: true
+            }
         },
         data() {
             return {

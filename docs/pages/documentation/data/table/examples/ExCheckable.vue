@@ -13,7 +13,7 @@
                     :checked-rows.sync="checkedRows"
                     checkable>
 
-                    <template scope="props">
+                    <template slot-scope="props">
                         <b-table-column label="ID" width="40" numeric>
                             {{ props.row.id }}
                         </b-table-column>
@@ -33,6 +33,10 @@
                         <b-table-column label="Gender">
                             {{ props.row.gender }}
                         </b-table-column>
+                    </template>
+
+                    <template slot="bottom-left">
+                        <b>Total checked</b>: {{ checkedRows.length }}
                     </template>
                 </b-table>
             </b-tab-item>

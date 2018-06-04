@@ -3,16 +3,20 @@
         <template v-for="(day, index) in week">
             <a v-if="selectableDate(day) && !disabled"
                 :key="index"
-                :class="classObject(day)"
+                :class="[classObject(day), {'has-event':eventsDateMatch(day)}, indicators]"
                 class="datepicker-cell"
                 role="button"
-                tabindex="0"
-                aria-label="Select Date"
+                href="#"
                 :disabled="disabled"
-                @click="emitChosenDate(day)"
-                @keydown.enter="emitChosenDate(day)"
+                @click.prevent="emitChosenDate(day)"
+                @keydown.enter.prevent="emitChosenDate(day)"
                 @keydown.space.prevent="emitChosenDate(day)">
                 {{ day.getDate() }}
+
+                <div class="events" v-if="eventsDateMatch(day)">
+                    <div class="event" :class="event.type" v-for="(event, index) in eventsDateMatch(day)" :key="index"></div>
+                </div>
+                
             </a>
             <div v-else
                 :key="index"
@@ -39,7 +43,10 @@
             },
             minDate: Date,
             maxDate: Date,
-            disabled: Boolean
+            disabled: Boolean,
+            unselectableDates: Array,
+            events: Array,
+            indicators: String
         },
         methods: {
             /*
@@ -59,6 +66,15 @@
 
                 validity.push(day.getMonth() === this.month)
 
+                if (this.unselectableDates) {
+                    for (let i = 0; i < this.unselectableDates.length; i++) {
+                        const disabledDate = this.unselectableDates[i]
+                        validity.push((day.getDate() !== disabledDate.getDate() ||
+                            day.getFullYear() !== disabledDate.getFullYear() ||
+                            day.getMonth() !== disabledDate.getMonth()))
+                    }
+                }
+
                 return validity.indexOf(false) < 0
             },
 
@@ -71,6 +87,24 @@
                 if (this.selectableDate(day)) {
                     this.$emit('select', day)
                 }
+            },
+
+            eventsDateMatch(day) {
+                if (!this.events.length) return false
+
+                const dayEvents = []
+
+                for (let i = 0; i < this.events.length; i++) {
+                    if (this.events[i].date.getDay() === day.getDay()) {
+                        dayEvents.push(this.events[i])
+                    }
+                }
+
+                if (!dayEvents.length) {
+                    return false
+                }
+
+                return dayEvents
             },
 
             /*

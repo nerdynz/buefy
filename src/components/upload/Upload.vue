@@ -23,6 +23,7 @@
             v-bind="$attrs"
             :multiple="multiple"
             :disabled="disabled"
+            @click="upload"
             @change="onFileChange">
     </label>
 </template>
@@ -32,6 +33,7 @@
 
     export default {
         name: 'bUpload',
+        inheritAttrs: false,
         mixins: [FormElementMixin],
         props: {
             value: {
@@ -65,6 +67,16 @@
             }
         },
         methods: {
+
+            /**
+             * Reset input value
+             */
+            upload() {
+                if (!this.disabled && !this.loading) {
+                    this.$refs.input.value = null
+                }
+            },
+
             /**
              * Listen change event on input type 'file',
              * emit 'input' event and validate

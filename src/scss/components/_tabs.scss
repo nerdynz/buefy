@@ -2,6 +2,11 @@
     .tabs {
         margin-bottom: 0;
     }
+    .is-disabled {
+        pointer-events: none;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
     .tab-content {
         position: relative;
         overflow: hidden;
@@ -14,5 +19,8 @@
     }
     &:not(:last-child) {
         margin-bottom: 1.5rem;
+    }
+    &.is-fullwidth {
+        width: 100%;
     }
 }

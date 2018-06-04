@@ -1,35 +1,37 @@
-import { Checkbox } from './components/checkbox'
+import { Checkbox, CheckboxButton } from './components/checkbox'
 import { Dropdown, DropdownItem } from './components/dropdown'
 import { Radio, RadioButton } from './components/radio'
 import { Table, TableColumn } from './components/table'
 import { Tabs, TabItem } from './components/tabs'
 import { Tag, Taglist } from './components/tag'
 import Autocomplete from './components/autocomplete'
-import Collapse from './components/Collapse'
+import Collapse from './components/collapse'
 import Datepicker from './components/datepicker'
+import Dialog from './components/dialog'
 import Field from './components/field'
 import Icon from './components/icon'
 import Input from './components/input'
+import LoadingProgrammatic, { Loading } from './components/loading'
 import Message from './components/message'
+import ModalProgrammatic, { Modal } from './components/modal'
 import Notification from './components/notification'
 import Pagination from './components/pagination'
 import Panel from './components/panel'
 import Select from './components/select'
+import Snackbar from './components/snackbar'
 import Switch from './components/switch'
+import Taginput from './components/taginput'
+import Timepicker from './components/timepicker'
+import Toast from './components/toast'
 import Tooltip from './components/tooltip'
 import Upload from './components/upload'
-
-import Dialog from './components/dialog'
-import LoadingProgrammatic, { Loading } from './components/loading'
-import ModalProgrammatic, { Modal } from './components/modal'
-import Snackbar from './components/snackbar'
-import Toast from './components/toast'
 
 import config, { setOptions } from './utils/config'
 
 const components = {
     Autocomplete,
     Checkbox,
+    CheckboxButton,
     Collapse,
     Datepicker,
     Dropdown,
@@ -53,6 +55,8 @@ const components = {
     Tabs,
     Tag,
     Taglist,
+    Taginput,
+    Timepicker,
     Tooltip,
     Upload
 }

@@ -16,7 +16,8 @@ export default {
         },
         type: String,
         hasIcon: Boolean,
-        size: String
+        size: String,
+        iconSize: String
     },
     data() {
         return {
@@ -35,13 +36,13 @@ export default {
         icon() {
             switch (this.type) {
                 case 'is-info':
-                    return 'info'
+                    return 'information'
                 case 'is-success':
-                    return 'check_circle'
+                    return 'check-circle'
                 case 'is-warning':
-                    return 'warning'
+                    return 'alert'
                 case 'is-danger':
-                    return 'error'
+                    return 'alert-circle'
                 default:
                     return null
             }

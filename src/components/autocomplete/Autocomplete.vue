@@ -1,6 +1,7 @@
 <template>
     <div class="autocomplete control" :class="{size, 'is-expanded': expanded}">
-        <b-input v-model="newValue"
+        <b-input
+            v-model="newValue"
             ref="input"
             :size="size"
             :loading="loading"
@@ -12,6 +13,7 @@
             @focus="focused"
             @blur="$emit('blur', $event)"
             @keyup.native.esc.prevent="isActive = false"
+            @keydown.native.tab="tabPressed"
             @keydown.native.enter.prevent="enterPressed"
             @keydown.native.up.prevent="keyArrows('up')"
             @keydown.native.down.prevent="keyArrows('down')">
@@ -60,7 +62,10 @@
         },
         props: {
             value: [Number, String],
-            data: Array,
+            data: {
+                type: Array,
+                default: () => []
+            },
             field: {
                 type: String,
                 default: 'value'
@@ -156,10 +161,15 @@
                 if (this.getValue(this.selected) !== value) this.setSelected(null, false)
 
                 // Keep first option always pre-selected
-                if (this.keepFirst && this.visibleData.length) {
+                if (this.keepFirst) {
                     this.$nextTick(() => {
-                        if (this.hovered !== this.visibleData[0]) {
-                            this.setHovered(this.visibleData[0])
+                        if (this.visibleData.length) {
+                            // If has visible data, keep updating the hovered
+                            if (this.newValue !== '' && this.hovered !== this.visibleData[0]) {
+                                this.setHovered(this.visibleData[0])
+                            }
+                        } else {
+                            this.setHovered(null)
                         }
                     })
                 }
@@ -213,6 +223,19 @@
             },
 
             /**
+             * Tab key listener.
+             * Select hovered option if it exists, close dropdown, then allow
+             * native handling to move to next tabbable element.
+             */
+            tabPressed() {
+                if (this.hovered === null) {
+                    this.isActive = false
+                    return
+                }
+                this.setSelected(this.hovered)
+            },
+
+            /**
              * Close dropdown if clicked outside.
              */
             clickedOutside(event) {
@@ -231,12 +254,14 @@
                     ? getValueByPath(option, this.field)
                     : option
 
-                const escapedValue = escapeRegExpChars(this.newValue)
+                const escapedValue = typeof this.newValue === 'string'
+                    ? escapeRegExpChars(this.newValue)
+                    : this.newValue
                 const regex = new RegExp(`(${escapedValue})`, 'gi')
-
-                return isHighlight
-                    ? value.replace(regex, '<b>$1</b>')
-                    : value
+                if (value && isHighlight) {
+                    return value.replace(regex, '<b>$1</b>')
+                }
+                return value
             },
 
             /**
@@ -245,6 +270,12 @@
              */
             calcDropdownInViewportVertical() {
                 this.$nextTick(() => {
+                    /**
+                     * this.$refs.dropdown may be undefined
+                     * when Autocomplete is conditional rendered
+                     */
+                    if (this.$refs.dropdown === undefined) return
+
                     const rect = this.$refs.dropdown.getBoundingClientRect()
 
                     this.isListInViewportVertically = (

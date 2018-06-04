@@ -13,13 +13,11 @@
                 <p class="control">
                     <button class="button is-primary" @click="sort(mobileSort)">
                         <b-icon
-                            icon="arrow_upward"
+                            v-show="currentSortColumn === mobileSort"
+                            icon="arrow-up"
                             both
                             size="is-small"
-                            :class="{
-                                'is-desc': !isAsc,
-                                'is-visible': currentSortColumn === mobileSort
-                            }">
+                            :class="{ 'is-desc': !isAsc }">
                         </b-icon>
                     </button>
                 </p>
@@ -28,14 +26,19 @@
 
         <div class="table-wrapper">
             <table
+                ref="b-table-ref"
                 class="table"
+                :tabindex="!focusable ? false : 0"
                 :class="{
                     'is-bordered': bordered,
                     'is-striped': striped,
                     'is-narrow': narrowed,
+                    'is-hoverable': hoverable || focusable,
                     'has-mobile-cards': mobileCards
-                }">
-                <thead>
+                }"
+                @keydown.prevent.up="pressedArrow(-1)"
+                @keydown.prevent.down="pressedArrow(1)">
+                <thead v-if="columns.length" ref="tableHead">
                     <tr>
                         <th v-if="detailed" width="40px"></th>
                         <th class="checkbox-cell" v-if="checkable">
@@ -53,28 +56,29 @@
                                 <template v-else>{{ column.label }}</template>
 
                                 <b-icon
-                                    icon="arrow_upward"
+                                    v-show="currentSortColumn === column"
+                                    icon="arrow-up"
                                     both
                                     size="is-small"
-                                    :class="{ 'is-desc': !isAsc, 'is-visible': currentSortColumn === column }">
+                                    :class="{ 'is-desc': !isAsc }">
                                 </b-icon>
                             </div>
                         </th>
                     </tr>
                 </thead>
-                <tbody v-if="visibleData.length" v-sortable="{ handle: '.draggy', onUpdate: dragDropRow }">
+                <tbody v-if="visibleData.length" ref="tableBody" v-sortable="{ handle: '.draggy', onUpdate: dragDropRow }">
                     <template v-for="(row, index) in visibleData">
                         <tr :key="row[datakey] || index"
-                            @click="selectRow(row)"
-                            @dblclick="$emit('dblclick', row)"
                             :class="[rowClass(row, index), {
                                 'is-selected': row === selected,
                                 'is-checked': isRowChecked(row)
-                            }]">
+                            }]"
+                            @click="selectRow(row)"
+                            @dblclick="$emit('dblclick', row)">
 
                             <td v-if="detailed">
                                 <a role="button" @click.stop="toggleDetails(row)">
-                                    <b-icon icon="chevron_right"
+                                    <b-icon icon="chevron-right"
                                         both
                                         :class="{'is-expanded': isVisibleDetailRow(row)}">
                                     </b-icon>
@@ -105,14 +109,20 @@
                         </td>
                     </tr>
                 </tbody>
+                <tfoot v-if="$slots.footer !== undefined">
+                    <tr class="table-footer">
+                        <slot name="footer" v-if="hasCustomFooterSlot()"></slot>
+                        <th :colspan="columnCount" v-else>
+                            <slot name="footer"></slot>
+                        </th>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
         <div v-if="checkable || paginated" class="level">
             <div class="level-left">
-                <div v-if="checkable && this.checkedRows.length > 0" class="level-item">
-                    <p>({{ this.checkedRows.length }})</p>
-                </div>
+                <slot name="bottom-left"></slot>
             </div>
 
             <div class="level-right">
@@ -121,7 +131,7 @@
                         :total="newDataTotal"
                         :per-page="perPage"
                         :simple="paginationSimple"
-                        :current="currentPage"
+                        :current="newCurrentPage"
                         @change="pageChanged">
                     </b-pagination>
                 </div>
@@ -135,6 +145,7 @@
     import Pagination from '../pagination'
     import Icon from '../icon'
     import { Checkbox } from '../checkbox'
+    // import tableDragger from 'table-dragger'
 
     export default {
         name: 'bTable',
@@ -152,10 +163,12 @@
             bordered: Boolean,
             striped: Boolean,
             narrowed: Boolean,
+            hoverable: Boolean,
             loading: Boolean,
             detailed: Boolean,
             checkable: Boolean,
             selected: Object,
+            focusable: Boolean,
             customIsChecked: Function,
             checkedRows: {
                 type: Array,
@@ -171,6 +184,10 @@
                 default: 'asc'
             },
             paginated: Boolean,
+            currentPage: {
+                type: Number,
+                default: 1
+            },
             perPage: {
                 type: [Number, String],
                 default: 20
@@ -181,23 +198,32 @@
                 type: Function,
                 default: () => ''
             },
+            openedDetailed: {
+                type: Array,
+                default: () => []
+            },
+            detailKey: {
+                type: String,
+                default: ''
+            },
             backendPagination: Boolean,
             total: {
                 type: [Number, String],
                 default: 0
-            }
+            },
+            dragHandle: String
         },
         data() {
             return {
                 columns: [],
-                visibleDetailRows: [],
+                visibleDetailRows: this.openedDetailed,
                 newData: this.data,
                 newDataTotal: this.backendPagination ? this.total : this.data.length,
                 newCheckedRows: [...this.checkedRows],
+                newCurrentPage: this.currentPage,
                 currentSortColumn: {},
                 isAsc: true,
                 mobileSort: {},
-                currentPage: 1,
                 firstTimeSort: true, // Used by first time initSort
                 _isTable: true // Used by TableColumn
             }
@@ -280,6 +306,14 @@
                         }
                     }
                 }
+            },
+
+            /**
+            * When the user wants to control the detailed rows via props.
+            * Or wants to open the details of certain row with the router for example.
+            */
+            openedDetailed(expandedRows) {
+                this.visibleDetailRows = expandedRows
             }
         },
         computed: {
@@ -289,7 +323,7 @@
             visibleData() {
                 if (!this.paginated) return this.newData
 
-                const currentPage = this.currentPage
+                const currentPage = this.newCurrentPage
                 const perPage = this.perPage
 
                 if (this.newData.length <= perPage) {
@@ -463,31 +497,105 @@
              * Paginator change listener.
              */
             pageChanged(page) {
-                this.currentPage = page > 0 ? page : 1
-                this.$emit('page-change', this.currentPage)
+                this.newCurrentPage = page > 0 ? page : 1
+                this.$emit('page-change', this.newCurrentPage)
             },
 
             /**
              * Toggle to show/hide details slot
              */
-            toggleDetails(index) {
-                const found = this.isVisibleDetailRow(index)
+            toggleDetails(obj) {
+                const found = this.isVisibleDetailRow(obj)
+
                 if (found) {
-                    const i = this.visibleDetailRows.indexOf(index)
-                    this.visibleDetailRows.splice(i, 1)
-                    this.$emit('details-close', index)
-                    return
+                    this.closeDetailRow(obj)
+                    this.$emit('details-close', obj)
+                } else {
+                    this.openDetailRow(obj)
+                    this.$emit('details-open', obj)
                 }
-                this.visibleDetailRows.push(index)
-                this.$emit('details-open', index)
+
+                // Syncs the detailed rows with the parent component
+                this.$emit('update:openedDetailed', this.visibleDetailRows)
             },
 
-            isVisibleDetailRow(index) {
-                return this.visibleDetailRows.indexOf(index) >= 0
+            openDetailRow(obj) {
+                const index = this.handleDetailKey(obj)
+                this.visibleDetailRows.push(index)
+            },
+
+            closeDetailRow(obj) {
+                const index = this.handleDetailKey(obj)
+                const i = this.visibleDetailRows.indexOf(index)
+                this.visibleDetailRows.splice(i, 1)
+            },
+
+            isVisibleDetailRow(obj) {
+                const index = this.handleDetailKey(obj)
+                const result = this.visibleDetailRows.indexOf(index) >= 0
+                return result
+            },
+
+            /**
+            * When the detailKey is defined we use the object[detailKey] as index.
+            * If not, use the object reference by default.
+            */
+            handleDetailKey(index) {
+                const key = this.detailKey
+                return !key.length
+                    ? index
+                    : index[key]
+            },
+
+            checkPredefinedDetailedRows() {
+                const defaultExpandedRowsDefined = this.openedDetailed.length > 0
+                if (defaultExpandedRowsDefined && !this.detailKey.length) {
+                    throw new Error('If you set a predefined opened-detailed, you must provide an unique key using the prop "detail-key"')
+                }
+            },
+
+            /**
+             * Check if footer slot has custom content.
+             */
+            hasCustomFooterSlot() {
+                if (this.$slots.footer.length > 1) return true
+
+                const tag = this.$slots.footer[0].tag
+                if (tag !== 'th' && tag !== 'td') return false
+
+                return true
+            },
+
+            /**
+             * Table arrow keys listener, change selection.
+             */
+            pressedArrow(pos) {
+                if (!this.visibleData.length) return
+
+                let index = this.visibleData.indexOf(this.selected) + pos
+
+                // Prevent from going up from first and down from last
+                index = index < 0
+                    ? 0
+                    : index > this.visibleData.length - 1
+                        ? this.visibleData.length - 1
+                        : index
+
+                this.selectRow(this.visibleData[index])
+            },
+
+            /**
+             * Focus table element if has selected prop.
+             */
+            focus() {
+                if (!this.focusable) return
+
+                this.$el.querySelector('table').focus()
             },
 
             dragDropRow(ev) {
-                this.$emit('row-drag-droped', ev)
+                this.$emit('row-drag-droped', ev.oldIndex, ev.newIndex) // cover typo..
+                this.$emit('row-drag-dropped', ev.oldIndex, ev.newIndex)
             },
             /**
              * Initial sorted column based on the default-sort prop.
@@ -514,7 +622,32 @@
                     }
                 })
             }
+        },
+
+        created() {
+        },
+
+        mounted() {
+            this.checkPredefinedDetailedRows()
+            // const table = this.$refs['b-table-ref']
+            // try {
+            //     var dragger = tableDragger(table, {
+            //         mode: 'row',
+            //         dragHandler: this.dragHandle || '.drag-handle',
+            //         onlyBody: true,
+            //         animation: 300
+            //     })
+
+            //     dragger.on('drop', (from, to) => {
+            //         from = from - 1
+            //         to = to - 1
+            //         this.$emit('row-drag-droped', from, to)
+            //     })
+            // } catch (e) {
+            //     if (e.message !== 'table-dragger: no element match dragHandler selector') {
+            //         throw e
+            //     }
+            // }
         }
     }
 </script>
-

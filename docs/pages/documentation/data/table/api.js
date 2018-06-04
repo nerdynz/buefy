@@ -156,7 +156,17 @@ export default [
             {
                 name: '<code>empty</code>',
                 description: 'Replaces table body when <code>data</code> array prop is empty',
-                props: ''
+                props: '—'
+            },
+            {
+                name: '<code>footer</code>',
+                description: 'Table custom footer',
+                props: '—'
+            },
+            {
+                name: '<code>bottom-left</code>',
+                description: 'Custom bottom-left (opposite side of pagination)',
+                props: '—'
             }
         ],
         events: [
@@ -210,6 +220,10 @@ export default [
             {
                 name: '<code>initSort</code>',
                 description: 'Sort using <code>default-sort</code> prop parameters'
+            },
+            {
+                name: '<code>focus</code>',
+                description: 'Focus table element if has <code>selected</code> prop'
             }
         ]
     },

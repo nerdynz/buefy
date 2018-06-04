@@ -2,6 +2,7 @@
     <div class="datepicker control" :class="[size, {'is-expanded': expanded}]">
         <b-dropdown v-if="!isMobile || inline"
             ref="dropdown"
+            :position="position"
             :disabled="disabled"
             :inline="inline">
             <b-input v-if="!inline"
@@ -28,14 +29,13 @@
                         <a v-if="!isFirstMonth && !disabled"
                             class="pagination-previous"
                             role="button"
-                            tabindex="0"
-                            aria-label="Decrement Month"
+                            href="#"
                             :disabled="disabled"
-                            @click="decrementMonth"
-                            @keydown.enter="decrementMonth"
+                            @click.prevent="decrementMonth"
+                            @keydown.enter.prevent="decrementMonth"
                             @keydown.space.prevent="decrementMonth">
 
-                            <b-icon icon="chevron_left"
+                            <b-icon icon="chevron-left"
                                 :pack="iconPack"
                                 both
                                 type="is-primary is-clickable">
@@ -44,14 +44,13 @@
                         <a v-show="!isLastMonth && !disabled"
                             class="pagination-next"
                             role="button"
-                            tabindex="0"
-                            aria-label="Increment Month"
+                            href="#"
                             :disabled="disabled"
-                            @click="incrementMonth"
-                            @keydown.enter="incrementMonth"
+                            @click.prevent="incrementMonth"
+                            @keydown.enter.prevent="incrementMonth"
                             @keydown.space.prevent="incrementMonth">
 
-                            <b-icon icon="chevron_right"
+                            <b-icon icon="chevron-right"
                                 :pack="iconPack"
                                 both
                                 type="is-primary is-clickable">
@@ -59,18 +58,16 @@
                         </a>
                         <div class="pagination-list">
                             <b-field>
-                                <b-select v-model="focusedDateData.month" 
-                                    :disabled="disabled"
-                                    aria-label="Select Month">
-                                    <option v-for="(month, index) in Object.values(monthNames)"
+                                <b-select v-model="focusedDateData.month"
+                                    :disabled="disabled">
+                                    <option v-for="(month, index) in monthNames"
                                         :value="index"
                                         :key="month">
                                         {{month}}
                                     </option>
                                 </b-select>
                                 <b-select v-model="focusedDateData.year"
-                                    :disabled="disabled"
-                                    aria-label="Select Year">
+                                    :disabled="disabled">
                                     <option v-for="year in listOfYears"
                                         :value="year"
                                         :key="year">
@@ -90,6 +87,9 @@
                     :max-date="maxDate"
                     :focused="focusedDateData"
                     :disabled="disabled"
+                    :unselectable-dates="unselectableDates"
+                    :events="events"
+                    :indicators="indicators"
                     @close="$refs.dropdown.isActive = false">
                 </b-datepicker-table>
 
@@ -213,6 +213,7 @@
                 type: Boolean,
                 default: false
             },
+            unselectableDates: Array,
             dateFormatter: {
                 type: Function,
                 default: (date) => {
@@ -232,6 +233,18 @@
                         return new Date(Date.parse(date))
                     }
                 }
+            },
+            mobileNative: {
+                type: Boolean,
+                default: () => {
+                    return config.defaultDatepickerMobileNative
+                }
+            },
+            position: String,
+            events: Array,
+            indicators: {
+                type: String,
+                default: 'dots'
             }
         },
         data() {
@@ -254,10 +267,10 @@
             */
             listOfYears() {
                 const latestYear = this.maxDate
-                ? this.maxDate.getFullYear() : new Date().getFullYear() + 3
+                    ? this.maxDate.getFullYear() : new Date().getFullYear() + 3
 
                 const earliestYear = this.minDate
-                ? this.minDate.getFullYear() : 1900
+                    ? this.minDate.getFullYear() : 1900
 
                 const arrayOfYears = []
                 for (let i = earliestYear; i <= latestYear; i++) {
@@ -282,7 +295,7 @@
             },
 
             isMobile() {
-                return isMobile.any()
+                return this.mobileNative && isMobile.any()
             }
         },
         watch: {
@@ -377,36 +390,25 @@
             },
 
             /*
-            * Return name of month full-length
-            */
-            nameOfMonth(month) {
-                const months = {}
-                for (let i = 0; i < this.monthNames.length; i++) {
-                    months[i] = this.monthNames[i]
-                }
-
-                return months[month]
-            },
-
-            /*
             * Format date into string 'YYYY-MM-DD'
             */
             formatYYYYMMDD(value) {
-                if (value && !isNaN(new Date(value))) {
-                    const date = new Date(value)
+                const date = new Date(value)
+                if (value && !isNaN(date)) {
                     const year = date.getFullYear()
                     const month = date.getMonth() + 1
                     const day = date.getDate()
-                    return year + '-' + ((month < 10 ? '0' : '') + month) + '-' + ((day < 10 ? '0' : '') + day)
+                    return year + '-' +
+                        ((month < 10 ? '0' : '') + month) + '-' +
+                        ((day < 10 ? '0' : '') + day)
                 }
                 return ''
             },
 
             /*
-            * Format date into string 'YYYY-MM-DD'
+            * Parse date from string
             */
             onChangeNativePicker(event) {
-                // YYYY-MM-DD
                 const date = event.target.value
                 this.dateSelected = date ? new Date(date) : null
             }

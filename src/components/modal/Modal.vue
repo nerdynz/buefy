@@ -5,30 +5,41 @@
             <div class="animation-content"
                 :class="{ 'modal-content': !hasModalCard }"
                 :style="{ maxWidth: newWidth }">
-                <component v-if="component"
+                <component
+                    v-if="component"
                     v-bind="props"
+                    v-on="events"
                     :is="component"
                     @close="close">
                 </component>
-                <div v-else-if="content" v-html="content"></div>
+                <div
+                    v-else-if="content"
+                    v-html="content">
+                </div>
                 <slot v-else></slot>
             </div>
-            <button v-if="showX" class="modal-close is-large" @click="cancel('x')"></button>
+            <button
+                v-if="showX"
+                class="modal-close is-large"
+                @click="cancel('x')">
+            </button>
         </div>
     </transition>
 </template>
 
 <script>
     import { removeElement } from '../../utils/helpers'
+    import config from '../../utils/config'
 
     export default {
         name: 'bModal',
         props: {
             active: Boolean,
-            component: Object,
+            component: [Object, Function],
             content: String,
             programmatic: Boolean,
             props: Object,
+            events: Object,
             width: {
                 type: [String, Number],
                 default: 960
@@ -40,16 +51,31 @@
             },
             canCancel: {
                 type: [Array, Boolean],
-                default: () => ['escape', 'x', 'outside']
+                default: () => ['escape', 'x', 'outside', 'button']
             },
             onCancel: {
                 type: Function,
                 default: () => {}
+            },
+            scroll: {
+                type: String,
+                default: () => {
+                    return config.defaultModalScroll
+                        ? config.defaultModalScroll
+                        : 'clip'
+                },
+                validator: (value) => {
+                    return [
+                        'clip',
+                        'keep'
+                    ].indexOf(value) >= 0
+                }
             }
         },
         data() {
             return {
                 isActive: this.active || false,
+                savedScrollTop: null,
                 newWidth: typeof this.width === 'number'
                     ? this.width + 'px'
                     : this.width
@@ -59,7 +85,7 @@
             cancelOptions() {
                 return typeof this.canCancel === 'boolean'
                     ? this.canCancel
-                        ? ['escape', 'x', 'outside']
+                        ? ['escape', 'x', 'outside', 'button']
                         : []
                     : this.canCancel
             },
@@ -72,13 +98,34 @@
                 this.isActive = value
             },
             isActive() {
-                if (typeof window !== 'undefined') {
-                    const action = this.isActive ? 'add' : 'remove'
-                    document.documentElement.classList[action]('is-clipped')
-                }
+                this.handleScroll()
             }
         },
         methods: {
+            handleScroll() {
+                if (typeof window === 'undefined') return
+
+                if (this.scroll === 'clip') {
+                    document.documentElement.classList.toggle('is-clipped', this.isActive)
+                    return
+                }
+
+                this.savedScrollTop = !this.savedScrollTop
+                    ? document.documentElement.scrollTop
+                    : this.savedScrollTop
+
+                document.body.classList.toggle('is-noscroll', this.isActive)
+
+                if (this.isActive) {
+                    document.body.style.top = `-${this.savedScrollTop}px`
+                    return
+                }
+
+                document.documentElement.scrollTop = this.savedScrollTop
+                document.body.style.top = null
+                this.savedScrollTop = null
+            },
+
             /**
              * Close the Modal if canCancel.
              */
@@ -127,6 +174,7 @@
         },
         mounted() {
             if (this.programmatic) this.isActive = true
+            else if (this.isActive) this.handleScroll()
         },
         beforeDestroy() {
             if (typeof window !== 'undefined') {

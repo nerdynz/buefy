@@ -1,6 +1,7 @@
 <template>
     <td v-if="visible"
         :class="{ 'has-text-right': numeric && !centered, 'has-text-centered': centered }"
+        :style="{ width: width + 'px' }"
         :data-label="label">
         <span><slot></slot></span>
     </td>
@@ -30,9 +31,9 @@
             }
         },
         created() {
+            // console.log(this.$parent)
             if (!this.$parent.$data._isTable) {
                 this.$destroy()
-                throw new Error('You should wrap bTableColumn on a bTable')
             }
 
             // Since we're using scoped prop the columns gonna be multiplied,

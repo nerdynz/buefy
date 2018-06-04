@@ -27,10 +27,24 @@ export default [
             },
             {
                 name: '<code>hasIcon</code>',
-                description: 'Adds an icon on the left side depending on the <code>type</code>',
+                description: 'Adds an icon on the left side depending on the <code>type</code> or <code>icon</code>',
                 type: 'Boolean',
                 values: '—',
                 default: '<code>false</code>'
+            },
+            {
+                name: '<code>icon</code>',
+                description: 'Icon name if <code>hasIcon</code>, optional',
+                type: 'String',
+                values: '—',
+                default: '—'
+            },
+            {
+                name: '<code>iconPack</code>',
+                description: 'Icon pack to use if <code>hasIcon</code>, optional',
+                type: 'String',
+                values: '<code>mdi</code>, <code>fa</code>',
+                default: '—'
             },
             {
                 name: '<code>animation</code>',
@@ -61,24 +75,10 @@ export default [
                 default: '<code>true</code> for Confirm/Prompt, <code>false</code> for Alert'
             },
             {
-                name: '<code>inputPlaceholder</code>',
-                description: `Prompt only: input's placeholder`,
-                type: 'String',
-                values: '—',
-                default: '—'
-            },
-            {
-                name: '<code>inputName</code>',
-                description: `Prompt only: input's native name`,
-                type: 'String',
-                values: '—',
-                default: '—'
-            },
-            {
-                name: '<code>inputMaxlength</code>',
-                description: `Prompt only: input's maxlength`,
-                type: 'Number',
-                values: '—',
+                name: '<code>inputAttrs</code>',
+                description: `Prompt only: input's attributes`,
+                type: 'Object',
+                values: 'Any HTML5 input attribute',
                 default: '—'
             },
             {

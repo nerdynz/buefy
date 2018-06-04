@@ -1,20 +1,26 @@
 <template>
     <transition :name="animation">
-        <div class="dialog modal is-active" v-if="isActive">
-            <div class="modal-background" @click="cancel"></div>
+        <div
+            v-if="isActive"
+            class="dialog modal is-active"
+            :class="size">
+            <div class="modal-background" @click="cancel('outside')"></div>
             <div class="modal-card animation-content">
                 <header class="modal-card-head" v-if="title">
                     <p class="modal-card-title">{{ title }}</p>
                 </header>
 
-                <section class="modal-card-body" :class="{ 'is-titleless': !title, 'is-flex': hasIcon }">
+                <section
+                    class="modal-card-body"
+                    :class="{ 'is-titleless': !title, 'is-flex': hasIcon }">
                     <div class="media">
-                        <div class="media-left" v-if="icon && hasIcon">
+                        <div class="media-left" v-if="hasIcon">
                             <b-icon
-                                :icon="icon"
-                                :class="type"
-                                both
-                                size="is-large custom-icon">
+                                :icon="icon ? icon : iconByType"
+                                :pack="iconPack"
+                                :type="type"
+                                :both="!icon"
+                                size="is-large">
                             </b-icon>
                         </div>
                         <div class="media-content">
@@ -24,12 +30,10 @@
                                 <div class="control">
                                     <input v-model="prompt"
                                         class="input"
-                                        :class="{ 'is-danger': validationMessage }"
                                         ref="input"
                                         required
-                                        :placeholder="inputPlaceholder"
-                                        :maxlength="inputMaxlength"
-                                        :name="inputName"
+                                        :class="{ 'is-danger': validationMessage }"
+                                        v-bind="inputAttrs"
                                         @keyup.enter="confirm">
                                 </div>
                                 <p class="help is-danger">{{ validationMessage }}</p>
@@ -39,10 +43,18 @@
                 </section>
 
                 <footer class="modal-card-foot">
-                    <button v-if="canCancel" class="button is-light" ref="cancelButton" @click="cancel">
+                    <button
+                        v-if="showCancel"
+                        class="button is-light"
+                        ref="cancelButton"
+                        @click="cancel('button')">
                         {{ cancelText }}
                     </button>
-                    <button class="button" :class="type" ref="confirmButton"  @click="confirm">
+                    <button
+                        class="button"
+                        :class="type"
+                        ref="confirmButton"
+                        @click="confirm">
                         {{ confirmText }}
                     </button>
                 </footer>
@@ -53,53 +65,61 @@
 
 <script>
     import Icon from '../icon'
+    import { Modal } from '../modal'
+    import config from '../../utils/config'
     import { removeElement } from '../../utils/helpers'
 
     export default {
+        name: 'bDialog',
+        extends: Modal,
         components: {
             [Icon.name]: Icon
         },
         props: {
             title: String,
             message: String,
+            icon: String,
+            iconPack: String,
             hasIcon: Boolean,
             type: {
                 type: String,
                 default: 'is-primary'
             },
+            size: String,
             confirmText: {
                 type: String,
-                default: 'OK'
+                default: () => {
+                    return config.defaultDialogConfirmText
+                        ? config.defaultDialogConfirmText
+                        : 'OK'
+                }
             },
             cancelText: {
                 type: String,
-                default: 'Cancel'
-            },
-            animation: {
-                type: String,
-                default: 'zoom-out'
-            },
-            canCancel: {
-                type: Boolean,
-                default: true
+                default: () => {
+                    return config.defaultDialogCancelText
+                        ? config.defaultDialogCancelText
+                        : 'Cancel'
+                }
             },
             hasInput: Boolean, // Used internally to know if it's prompt
-            inputPlaceholder: String,
-            inputName: String,
-            inputMaxlength: [Number, String],
-            onConfirm: {
-                type: Function,
+            inputAttrs: {
+                type: Object,
                 default: () => {}
             },
-            onCancel: {
+            onConfirm: {
                 type: Function,
                 default: () => {}
             }
         },
         data() {
+            const prompt = this.hasInput
+                ? this.inputAttrs.value || ''
+                : ''
+
             return {
+                prompt,
                 isActive: false,
-                prompt: '',
                 validationMessage: ''
             }
         },
@@ -107,27 +127,22 @@
             /**
              * Icon name (MDI) based on the type.
              */
-            icon() {
+            iconByType() {
                 switch (this.type) {
                     case 'is-info':
-                        return 'info'
+                        return 'information'
                     case 'is-success':
-                        return 'check_circle'
+                        return 'check-circle'
                     case 'is-warning':
-                        return 'warning'
+                        return 'alert'
                     case 'is-danger':
-                        return 'error'
+                        return 'alert-circle'
                     default:
                         return null
                 }
-            }
-        },
-        watch: {
-            isActive() {
-                if (typeof window !== 'undefined') {
-                    const action = this.isActive ? 'add' : 'remove'
-                    document.documentElement.classList[action]('is-clipped')
-                }
+            },
+            showCancel() {
+                return this.cancelOptions.indexOf('button') >= 0
             }
         },
         methods: {
@@ -149,39 +164,17 @@
             },
 
             /**
-             * Call the onCancel prop (function) and close the Dialog.
-             */
-            cancel() {
-                if (!this.canCancel) return
-
-                this.onCancel()
-                this.close()
-            },
-
-            /**
              * Close the Dialog.
              */
             close() {
                 this.isActive = false
+                this.onCancel.apply(null, arguments)
 
                 // Timeout for the animation complete before destroying
                 setTimeout(() => {
                     this.$destroy()
                     removeElement(this.$el)
                 }, 150)
-            },
-
-            /**
-             * Keypress event that is bound to the document.
-             */
-            keyPress(event) {
-                // Esc key
-                if (event.keyCode === 27) this.cancel()
-            }
-        },
-        created() {
-            if (typeof window !== 'undefined') {
-                document.addEventListener('keyup', this.keyPress)
             }
         },
         beforeMount() {
@@ -193,17 +186,10 @@
 
             this.$nextTick(() => {
                 // Handle which element receives focus
-                if (this.hasInput) {
-                    this.$refs.input.focus()
-                } else {
-                    this.$refs.confirmButton.focus()
-                }
+                this.hasInput
+                    ? this.$refs.input.focus()
+                    : this.$refs.confirmButton.focus()
             })
-        },
-        beforeDestroy() {
-            if (typeof window !== 'undefined') {
-                document.removeEventListener('keyup', this.keyPress)
-            }
         }
     }
 </script>
