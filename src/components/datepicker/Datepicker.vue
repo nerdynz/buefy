@@ -1,11 +1,13 @@
 <template>
     <div class="datepicker control" :class="[size, {'is-expanded': expanded}]">
-        <b-dropdown v-if="!isMobile || inline"
+        <b-dropdown
+            v-if="!isMobile || inline"
             ref="dropdown"
             :position="position"
             :disabled="disabled"
             :inline="inline">
-            <b-input v-if="!inline"
+            <b-input
+                v-if="!inline"
                 ref="input"
                 slot="trigger"
                 autocomplete="off"
@@ -14,19 +16,23 @@
                 :size="size"
                 :icon="icon"
                 :icon-pack="iconPack"
+                :rounded="rounded"
                 :loading="loading"
                 :disabled="disabled"
                 :readonly="readonly"
                 v-bind="$attrs"
                 @change.native="onChange($event.target.value)"
                 @focus="$emit('focus', $event)"
-                @blur="$emit('blur', $event) && checkHtml5Validity()">
-            </b-input>
+                @blur="$emit('blur', $event) && checkHtml5Validity()"/>
 
             <b-dropdown-item :disabled="disabled" custom>
                 <header class="datepicker-header">
-                    <div class="pagination field is-centered">
-                        <a v-if="!isFirstMonth && !disabled"
+                    <template v-if="$slots.header !== undefined && $slots.header.length">
+                        <slot name="header" />
+                    </template>
+                    <div v-else class="pagination field is-centered">
+                        <a
+                            v-if="!isFirstMonth && !disabled"
                             class="pagination-previous"
                             role="button"
                             href="#"
@@ -35,13 +41,14 @@
                             @keydown.enter.prevent="decrementMonth"
                             @keydown.space.prevent="decrementMonth">
 
-                            <b-icon icon="chevron-left"
+                            <b-icon
+                                icon="chevron-left"
                                 :pack="iconPack"
                                 both
-                                type="is-primary is-clickable">
-                            </b-icon>
+                                type="is-primary is-clickable"/>
                         </a>
-                        <a v-show="!isLastMonth && !disabled"
+                        <a
+                            v-show="!isLastMonth && !disabled"
                             class="pagination-next"
                             role="button"
                             href="#"
@@ -50,28 +57,32 @@
                             @keydown.enter.prevent="incrementMonth"
                             @keydown.space.prevent="incrementMonth">
 
-                            <b-icon icon="chevron-right"
+                            <b-icon
+                                icon="chevron-right"
                                 :pack="iconPack"
                                 both
-                                type="is-primary is-clickable">
-                            </b-icon>
+                                type="is-primary is-clickable"/>
                         </a>
                         <div class="pagination-list">
                             <b-field>
-                                <b-select v-model="focusedDateData.month"
+                                <b-select
+                                    v-model="focusedDateData.month"
                                     :disabled="disabled">
-                                    <option v-for="(month, index) in monthNames"
+                                    <option
+                                        v-for="(month, index) in monthNames"
                                         :value="index"
                                         :key="month">
-                                        {{month}}
+                                        {{ month }}
                                     </option>
                                 </b-select>
-                                <b-select v-model="focusedDateData.year"
+                                <b-select
+                                    v-model="focusedDateData.year"
                                     :disabled="disabled">
-                                    <option v-for="year in listOfYears"
+                                    <option
+                                        v-for="year in listOfYears"
                                         :value="year"
                                         :key="year">
-                                        {{year}}
+                                        {{ year }}
                                     </option>
                                 </b-select>
                             </b-field>
@@ -79,7 +90,8 @@
                     </div>
                 </header>
 
-                <b-datepicker-table v-model="dateSelected"
+                <b-datepicker-table
+                    v-model="dateSelected"
                     :day-names="dayNames"
                     :month-names="monthNames"
                     :first-day-of-week="firstDayOfWeek"
@@ -88,19 +100,22 @@
                     :focused="focusedDateData"
                     :disabled="disabled"
                     :unselectable-dates="unselectableDates"
+                    :unselectable-days-of-week="unselectableDaysOfWeek"
+                    :selectable-dates="selectableDates"
                     :events="events"
                     :indicators="indicators"
-                    @close="$refs.dropdown.isActive = false">
-                </b-datepicker-table>
+                    @close="$refs.dropdown.isActive = false"/>
 
-                <footer v-if="$slots.default !== undefined && $slots.default.length"
+                <footer
+                    v-if="$slots.default !== undefined && $slots.default.length"
                     class="datepicker-footer">
-                    <slot></slot>
+                    <slot/>
                 </footer>
             </b-dropdown-item>
         </b-dropdown>
 
-        <b-input v-else
+        <b-input
+            v-else
             ref="input"
             type="date"
             autocomplete="off"
@@ -117,8 +132,7 @@
             v-bind="$attrs"
             @change.native="onChangeNativePicker"
             @focus="$emit('focus', $event)"
-            @blur="$emit('blur', $event) && checkHtml5Validity()">
-        </b-input>
+            @blur="$emit('blur', $event) && checkHtml5Validity()"/>
     </div>
 </template>
 
@@ -135,9 +149,7 @@
     import DatepickerTable from './DatepickerTable'
 
     export default {
-        name: 'bDatepicker',
-        inheritAttrs: false,
-        mixins: [FormElementMixin],
+        name: 'BDatepicker',
         components: {
             [DatepickerTable.name]: DatepickerTable,
             [Input.name]: Input,
@@ -147,6 +159,8 @@
             [Dropdown.name]: Dropdown,
             [DropdownItem.name]: DropdownItem
         },
+        mixins: [FormElementMixin],
+        inheritAttrs: false,
         props: {
             value: Date,
             dayNames: {
@@ -214,13 +228,22 @@
                 default: false
             },
             unselectableDates: Array,
+            unselectableDaysOfWeek: {
+                type: Array,
+                default: () => { return config.defaultUnselectableDaysOfWeek }
+            },
+            selectableDates: Array,
             dateFormatter: {
                 type: Function,
                 default: (date) => {
                     if (typeof config.defaultDateFormatter === 'function') {
                         return config.defaultDateFormatter(date)
                     } else {
-                        return date.toLocaleDateString()
+                        const yyyyMMdd = date.getFullYear() +
+                            '/' + (date.getMonth() + 1) +
+                            '/' + date.getDate()
+                        const d = new Date(yyyyMMdd)
+                        return d.toLocaleDateString()
                     }
                 }
             },
@@ -267,10 +290,11 @@
             */
             listOfYears() {
                 const latestYear = this.maxDate
-                    ? this.maxDate.getFullYear() : new Date().getFullYear() + 3
+                ? this.maxDate.getFullYear()
+                    : (Math.max(new Date().getFullYear(), this.focusedDateData.year) + 3)
 
                 const earliestYear = this.minDate
-                    ? this.minDate.getFullYear() : 1900
+                ? this.minDate.getFullYear() : 1900
 
                 const arrayOfYears = []
                 for (let i = earliestYear; i <= latestYear; i++) {
@@ -324,6 +348,25 @@
                 this.dateSelected = value
 
                 !this.isValid && this.$refs.input.checkHtml5Validity()
+            },
+
+            focusedDate(value) {
+                if (value) {
+                    this.focusedDateData = {
+                        month: value.getMonth(),
+                        year: value.getFullYear()
+                    }
+                }
+            },
+
+            /*
+            * Emit input event on month and/or year change
+            */
+            'focusedDateData.month'(value) {
+                this.$emit('change-month', value)
+            },
+            'focusedDateData.year'(value) {
+                this.$emit('change-year', value)
             }
         },
         methods: {

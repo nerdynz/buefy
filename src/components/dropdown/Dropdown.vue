@@ -1,32 +1,28 @@
 <template>
-    <div class="dropdown"
-        :class="[position, {
-            'is-disabled': disabled,
-            'is-hoverable': hoverable,
-            'is-inline': inline,
-            'is-active': isActive || inline,
-            'is-mobile-modal': isMobileModal
-        }]"> 
-        <div v-if="!inline"
+    <div class="dropdown" :class="rootClasses">
+        <div
+            v-if="!inline"
             role="button"
             ref="trigger"
             class="dropdown-trigger"
             @click="toggle">
-            <slot name="trigger"></slot>
+            <slot name="trigger"/>
         </div>
 
         <transition name="fade">
-            <div v-if="isMobileModal"
+            <div
+                v-if="isMobileModal"
                 v-show="isActive"
-                class="background">
-            </div>
+                class="background"
+            />
         </transition>
         <transition name="fade">
-            <div v-show="isActive || hoverable || inline"
+            <div
+                v-show="(!disabled && (isActive || hoverable)) || inline"
                 ref="dropdownMenu"
                 class="dropdown-menu">
                 <div class="dropdown-content">
-                    <slot></slot>
+                    <slot/>
                 </div>
             </div>
         </transition>
@@ -35,7 +31,7 @@
 
 <script>
     export default {
-        name: 'bDropdown',
+        name: 'BDropdown',
         props: {
             value: {
                 type: [String, Number, Boolean, Object, Array, Symbol, Function],
@@ -67,6 +63,15 @@
             }
         },
         computed: {
+            rootClasses() {
+                return [this.position, {
+                    'is-disabled': this.disabled,
+                    'is-hoverable': this.hoverable,
+                    'is-inline': this.inline,
+                    'is-active': this.isActive || this.inline,
+                    'is-mobile-modal': this.isMobileModal
+                }]
+            },
             isMobileModal() {
                 return this.mobileModal && !this.inline && !this.hoverable
             }
@@ -76,7 +81,7 @@
              * When v-model is changed set the new selected item.
              */
             value(value) {
-                this.selectItem(value)
+                this.selected = value
             },
 
             /**
@@ -94,9 +99,11 @@
              *   3. Close the dropdown.
              */
             selectItem(value) {
-                this.selected = value
+                if (this.selected !== value) {
+                    this.$emit('change', value)
+                    this.selected = value
+                }
                 this.$emit('input', value)
-                this.$emit('change', value)
                 this.isActive = false
             },
 
@@ -143,7 +150,13 @@
             toggle() {
                 if (this.disabled || this.hoverable) return
 
-                this.isActive = !this.isActive
+                if (!this.isActive) {
+                    // if not active, toggle after clickOutside event
+                    // this fixes toggling programmatic
+                    this.$nextTick(() => { this.isActive = !this.isActive })
+                } else {
+                    this.isActive = !this.isActive
+                }
             }
         },
         created() {

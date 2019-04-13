@@ -1,6 +1,7 @@
 <template>
-    <div class="taginput control" :class="[size, rootClasses]">
-        <div class="taginput-container"
+    <div class="taginput control" :class="rootClasses">
+        <div
+            class="taginput-container"
             :class="[statusType, size, containerClasses]"
             :disabled="disabled"
             @click="hasInput && focus($event)">
@@ -13,6 +14,7 @@
                 :attached="attached"
                 :tabstop="false"
                 :disabled="disabled"
+                :ellipsis="ellipsis"
                 closable
                 @close="removeTag(index)">
                 {{ getNormalizedTagText(tag) }}
@@ -37,6 +39,16 @@
                 @blur="customOnBlur"
                 @keydown.native="keydown"
                 @select="onSelect">
+                <template
+                    :slot="defaultSlotName"
+                    slot-scope="props">
+                    <slot
+                        :option="props.option"
+                        :index="props.index" />
+                </template>
+                <template :slot="emptySlotName">
+                    <slot name="empty" />
+                </template>
             </b-autocomplete>
         </div>
 
@@ -57,12 +69,12 @@
     import FormElementMixin from '../../utils/FormElementMixin'
 
     export default {
-        name: 'bTaginput',
-        mixins: [FormElementMixin],
-        inheritAttrs: false,
+        name: 'BTaginput',
         components: {
             [Autocomplete.name]: Autocomplete
         },
+        mixins: [FormElementMixin],
+        inheritAttrs: false,
         props: {
             value: {
                 type: Array,
@@ -90,7 +102,25 @@
                 default: 'value'
             },
             autocomplete: Boolean,
-            disabled: Boolean
+            disabled: Boolean,
+            ellipsis: Boolean,
+            confirmKeyCodes: {
+                type: Array,
+                default: () => [13, 188]
+            },
+            removeOnKeys: {
+                type: Array,
+                default: () => [8]
+            },
+            allowNew: Boolean,
+            onPasteSeparators: {
+                type: Array,
+                default: () => [',']
+            },
+            beforeAdding: {
+                type: Function,
+                default: () => true
+            }
         },
         data() {
             return {
@@ -118,6 +148,22 @@
                 return this.newTag.trim().length
             },
 
+            defaultSlotName() {
+                return this.hasDefaultSlot ? 'default' : 'dontrender'
+            },
+
+            emptySlotName() {
+                return this.hasEmptySlot ? 'empty' : 'dontrender'
+            },
+
+            hasDefaultSlot() {
+                return !!this.$scopedSlots.default
+            },
+
+            hasEmptySlot() {
+                return !!this.$slots.empty
+            },
+
             /**
              * Show the input field if a maxtags hasn't been set or reached.
              */
@@ -127,6 +173,18 @@
 
             tagsLength() {
                 return this.tags.length
+            },
+
+            /**
+             * If Taginput has onPasteSeparators prop,
+             * returning new RegExp used to split pasted string.
+             */
+            separatorsAsRegExp() {
+                const sep = this.onPasteSeparators
+
+                return sep.length ? new RegExp(sep.map((s) => {
+                    return s ? s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') : null
+                }).join('|'), 'g') : null
             }
         },
         watch: {
@@ -149,11 +207,24 @@
             addTag(tag) {
                 const tagToAdd = tag || this.newTag.trim()
 
-                // Add the tag input if it is not blank or previously added.
-                if (tagToAdd && this.tags.indexOf(tagToAdd) === -1) {
-                    this.tags.push(tagToAdd)
-                    this.$emit('input', this.tags)
-                    this.$emit('add', tagToAdd)
+                if (tagToAdd) {
+                    if (!this.autocomplete) {
+                        const reg = this.separatorsAsRegExp
+                        if (reg && tagToAdd.match(reg)) {
+                            tagToAdd.split(reg)
+                                .map((t) => t.trim())
+                                .filter((t) => t.length !== 0)
+                                .map(this.addTag)
+                            return
+                        }
+                    }
+
+                    // Add the tag input if it is not blank or previously added.
+                    if (this.tags.indexOf(tagToAdd) === -1 && this.beforeAdding(tagToAdd)) {
+                        this.tags.push(tagToAdd)
+                        this.$emit('input', this.tags)
+                        this.$emit('add', tagToAdd)
+                    }
                 }
 
                 this.newTag = ''
@@ -168,10 +239,10 @@
             },
 
             customOnBlur($event) {
-                this.onBlur($event)
-
                 // Add tag on-blur if not select only
                 if (!this.autocomplete) this.addTag()
+
+                this.onBlur($event)
             },
 
             onSelect(option) {
@@ -192,15 +263,18 @@
 
             removeLastTag() {
                 if (this.tagsLength > 0) {
-                    this.newTag = this.removeTag(this.tagsLength - 1)
+                    this.removeTag(this.tagsLength - 1)
                 }
             },
 
             keydown(event) {
+                if (this.removeOnKeys.indexOf(event.keyCode) !== -1 && !this.newTag.length) {
+                    this.removeLastTag()
+                }
                 // Stop if is to accept select only
-                if (this.autocomplete) return
+                if (this.autocomplete && !this.allowNew) return
 
-                if (event.keyCode === 13 || event.keyCode === 188) {
+                if (this.confirmKeyCodes.indexOf(event.keyCode) >= 0) {
                     event.preventDefault()
                     this.addTag()
                 }

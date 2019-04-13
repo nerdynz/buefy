@@ -1,8 +1,9 @@
 <template>
     <transition :name="animation">
-        <div class="modal is-active" v-if="isActive">
-            <div class="modal-background" @click="cancel('outside')"></div>
-            <div class="animation-content"
+        <div v-if="isActive" class="modal is-active">
+            <div class="modal-background" @click="cancel('outside')"/>
+            <div
+                class="animation-content"
                 :class="{ 'modal-content': !hasModalCard }"
                 :style="{ maxWidth: newWidth }">
                 <component
@@ -10,19 +11,17 @@
                     v-bind="props"
                     v-on="events"
                     :is="component"
-                    @close="close">
-                </component>
+                    @close="close"/>
                 <div
                     v-else-if="content"
-                    v-html="content">
-                </div>
-                <slot v-else></slot>
+                    v-html="content"/>
+                <slot v-else/>
             </div>
             <button
+                type="button"
                 v-if="showX"
                 class="modal-close is-large"
-                @click="cancel('x')">
-            </button>
+                @click="cancel('x')"/>
         </div>
     </transition>
 </template>
@@ -32,7 +31,7 @@
     import config from '../../utils/config'
 
     export default {
-        name: 'bModal',
+        name: 'BModal',
         props: {
             active: Boolean,
             component: [Object, Function],
@@ -127,11 +126,12 @@
             },
 
             /**
-             * Close the Modal if canCancel.
+             * Close the Modal if canCancel and call the onCancel prop (function).
              */
             cancel(method) {
                 if (this.cancelOptions.indexOf(method) < 0) return
 
+                this.onCancel.apply(null, arguments)
                 this.close()
             },
 
@@ -140,7 +140,6 @@
              * Emit events, and destroy modal if it's programmatic.
              */
             close() {
-                this.onCancel.apply(null, arguments)
                 this.$emit('close')
                 this.$emit('update:active', false)
 
@@ -159,7 +158,7 @@
              */
             keyPress(event) {
                 // Esc key
-                if (event.keyCode === 27) this.cancel('escape')
+                if (this.isActive && event.keyCode === 27) this.cancel('escape')
             }
         },
         created() {
@@ -179,6 +178,14 @@
         beforeDestroy() {
             if (typeof window !== 'undefined') {
                 document.removeEventListener('keyup', this.keyPress)
+                // reset scroll
+                document.documentElement.classList.toggle('is-clipped', false)
+                const savedScrollTop = !this.savedScrollTop
+                    ? document.documentElement.scrollTop
+                    : this.savedScrollTop
+                document.body.classList.toggle('is-noscroll', false)
+                document.documentElement.scrollTop = savedScrollTop
+                document.body.style.top = null
             }
         }
     }

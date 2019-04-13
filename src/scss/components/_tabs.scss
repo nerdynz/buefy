@@ -1,6 +1,7 @@
 .b-tabs {
     .tabs {
         margin-bottom: 0;
+        flex-shrink: 0;
     }
     .is-disabled {
         pointer-events: none;
@@ -12,9 +13,10 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        padding: 1rem;
         .tab-item {
             flex-shrink: 0;
-            flex-basis: 100%;
+            flex-basis: auto;
         }
     }
     &:not(:last-child) {

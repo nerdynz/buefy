@@ -1,8 +1,8 @@
 <template>
     <div id="app">
-        <vue-progress-bar></vue-progress-bar>
+        <vue-progress-bar/>
 
-        <router-view></router-view>
+        <router-view/>
     </div>
 </template>
 
@@ -22,7 +22,7 @@
                 this.clipboard && this.clipboard.destroy()
 
                 this.clipboard = new Clipboard('.copy-code', {
-                    target: (trigger) => trigger.nextElementSibling.children[0]
+                    target: (trigger) => trigger.parentElement.parentElement.querySelector('code')
                 })
 
                 this.clipboard.on('success', (e) => {

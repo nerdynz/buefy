@@ -4,7 +4,7 @@
             v-if="isActive"
             class="dialog modal is-active"
             :class="size">
-            <div class="modal-background" @click="cancel('outside')"></div>
+            <div class="modal-background" @click="cancel('outside')"/>
             <div class="modal-card animation-content">
                 <header class="modal-card-head" v-if="title">
                     <p class="modal-card-title">{{ title }}</p>
@@ -20,18 +20,17 @@
                                 :pack="iconPack"
                                 :type="type"
                                 :both="!icon"
-                                size="is-large">
-                            </b-icon>
+                                size="is-large"/>
                         </div>
                         <div class="media-content">
-                            <p v-html="message"></p>
+                            <p v-html="message"/>
 
                             <div v-if="hasInput" class="field">
                                 <div class="control">
-                                    <input v-model="prompt"
+                                    <input
+                                        v-model="prompt"
                                         class="input"
                                         ref="input"
-                                        required
                                         :class="{ 'is-danger': validationMessage }"
                                         v-bind="inputAttrs"
                                         @keyup.enter="confirm">
@@ -45,7 +44,7 @@
                 <footer class="modal-card-foot">
                     <button
                         v-if="showCancel"
-                        class="button is-light"
+                        class="button"
                         ref="cancelButton"
                         @click="cancel('button')">
                         {{ cancelText }}
@@ -70,11 +69,11 @@
     import { removeElement } from '../../utils/helpers'
 
     export default {
-        name: 'bDialog',
-        extends: Modal,
+        name: 'BDialog',
         components: {
             [Icon.name]: Icon
         },
+        extends: Modal,
         props: {
             title: String,
             message: String,
@@ -105,11 +104,15 @@
             hasInput: Boolean, // Used internally to know if it's prompt
             inputAttrs: {
                 type: Object,
-                default: () => {}
+                default: () => ({})
             },
             onConfirm: {
                 type: Function,
                 default: () => {}
+            },
+            focusOn: {
+                type: String,
+                default: 'confirm'
             }
         },
         data() {
@@ -168,8 +171,6 @@
              */
             close() {
                 this.isActive = false
-                this.onCancel.apply(null, arguments)
-
                 // Timeout for the animation complete before destroying
                 setTimeout(() => {
                     this.$destroy()
@@ -184,11 +185,19 @@
         mounted() {
             this.isActive = true
 
+            if (typeof this.inputAttrs.required === 'undefined') {
+                this.$set(this.inputAttrs, 'required', true)
+            }
+
             this.$nextTick(() => {
                 // Handle which element receives focus
-                this.hasInput
-                    ? this.$refs.input.focus()
-                    : this.$refs.confirmButton.focus()
+                if (this.hasInput) {
+                    this.$refs.input.focus()
+                } else if (this.focusOn === 'cancel' && this.showCancel) {
+                    this.$refs.cancelButton.focus()
+                } else {
+                    this.$refs.confirmButton.focus()
+                }
             })
         }
     }

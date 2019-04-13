@@ -1,11 +1,13 @@
 <template>
     <div class="timepicker control" :class="[size, {'is-expanded': expanded}]">
-        <b-dropdown v-if="!isMobile || inline"
+        <b-dropdown
+            v-if="!isMobile || inline"
             ref="dropdown"
             :position="position"
             :disabled="disabled"
             :inline="inline">
-            <b-input v-if="!inline"
+            <b-input
+                v-if="!inline"
                 ref="input"
                 slot="trigger"
                 autocomplete="off"
@@ -17,58 +19,66 @@
                 :loading="loading"
                 :disabled="disabled"
                 :readonly="readonly"
+                :rounded="rounded"
                 v-bind="$attrs"
                 @change.native="onChange($event.target.value)"
                 @focus="$emit('focus', $event)"
-                @blur="$emit('blur', $event) && checkHtml5Validity()">
-            </b-input>
+                @blur="$emit('blur', $event) && checkHtml5Validity()"/>
 
             <b-dropdown-item :disabled="disabled" custom>
                 <div class="pagination-list">
                     <b-field>
-                        <b-select v-model="hoursSelected"
+                        <b-select
+                            v-model="hoursSelected"
                             @change.native="onHoursChange($event.target.value)"
                             :disabled="disabled"
                             placeholder="00">
-                            <option v-for="hour in hours"
+                            <option
+                                v-for="hour in hours"
                                 :value="hour.value"
                                 :key="hour.value"
                                 :disabled="isHourDisabled(hour.value)">
-                                {{hour.label}}
+                                {{ hour.label }}
                             </option>
                         </b-select>
-                        <b-select v-model="minutesSelected"
+                        <b-select
+                            v-model="minutesSelected"
                             @change.native="onMinutesChange($event.target.value)"
                             :disabled="disabled"
                             placeholder="00">
-                            <option v-for="minute in minutes"
+                            <option
+                                v-for="minute in minutes"
                                 :value="minute.value"
                                 :key="minute.value"
                                 :disabled="isMinuteDisabled(minute.value)">
-                                {{minute.label}}
+                                {{ minute.label }}
                             </option>
                         </b-select>
-                        <b-select v-model="meridienSelected"
+                        <b-select
+                            v-model="meridienSelected"
                             @change.native="onMeridienChange($event.target.value)"
                             v-if="!isHourFormat24"
                             :disabled="disabled">
-                            <option v-for="meridien in meridiens"
+                            <option
+                                v-for="meridien in meridiens"
                                 :value="meridien"
                                 :key="meridien">
-                                {{meridien}}
+                                {{ meridien }}
                             </option>
                         </b-select>
                     </b-field>
                 </div>
 
-                <footer v-if="$slots.default !== undefined && $slots.default.length"
+                <footer
+                    v-if="$slots.default !== undefined && $slots.default.length"
                     class="timepicker-footer">
-                    <slot></slot>
+                    <slot/>
                 </footer>
             </b-dropdown-item>
         </b-dropdown>
 
-        <b-input v-else
+        <b-input
+            v-else
             ref="input"
             type="time"
             autocomplete="off"
@@ -85,8 +95,7 @@
             v-bind="$attrs"
             @change.native="onChangeNativePicker"
             @focus="$emit('focus', $event)"
-            @blur="$emit('blur', $event) && checkHtml5Validity()">
-        </b-input>
+            @blur="$emit('blur', $event) && checkHtml5Validity()"/>
     </div>
 </template>
 
@@ -143,9 +152,14 @@
                 isNaN(minutes) || minutes < 0 || minutes > 59) {
                 return null
             }
-            const d = new Date()
-            d.setMilliseconds(0)
-            d.setSeconds(0)
+            let d = null
+            if (vm.dateSelected && !isNaN(vm.dateSelected)) {
+                d = new Date(vm.dateSelected)
+            } else {
+                d = new Date()
+                d.setMilliseconds(0)
+                d.setSeconds(0)
+            }
             d.setMinutes(minutes)
             if (vm.hourFormat === HOUR_FORMAT_12) {
                 if (am && hours === 12) {
@@ -161,9 +175,7 @@
     }
 
     export default {
-        name: 'bTimepicker',
-        inheritAttrs: false,
-        mixins: [FormElementMixin],
+        name: 'BTimepicker',
         components: {
             [Input.name]: Input,
             [Field.name]: Field,
@@ -172,6 +184,8 @@
             [Dropdown.name]: Dropdown,
             [DropdownItem.name]: DropdownItem
         },
+        mixins: [FormElementMixin],
+        inheritAttrs: false,
         props: {
             value: Date,
             inline: Boolean,
@@ -223,7 +237,8 @@
                     return config.defaultTimepickerMobileNative
                 }
             },
-            position: String
+            position: String,
+            unselectableTimes: Array
         },
         data() {
             return {
@@ -336,19 +351,31 @@
             },
 
             onHoursChange(value) {
-                this.updateDateSelected(parseInt(value, 10), this.minutesSelected, this.meridienSelected)
+                this.updateDateSelected(
+                    parseInt(value, 10),
+                    this.minutesSelected,
+                    this.meridienSelected
+                )
             },
 
             onMinutesChange(value) {
-                this.updateDateSelected(this.hoursSelected, parseInt(value, 10), this.meridienSelected)
+                this.updateDateSelected(
+                    this.hoursSelected,
+                    parseInt(value, 10),
+                    this.meridienSelected
+                )
             },
 
             updateDateSelected(hours, minutes, meridiens) {
                 if (hours != null && minutes != null &&
                     ((!this.isHourFormat24 && meridiens !== null) || this.isHourFormat24)) {
-                    this.dateSelected = new Date()
-                    this.dateSelected.setMilliseconds(0)
-                    this.dateSelected.setSeconds(0)
+                    if (this.dateSelected && !isNaN(this.dateSelected)) {
+                        this.dateSelected = new Date(this.dateSelected)
+                    } else {
+                        this.dateSelected = new Date()
+                        this.dateSelected.setMilliseconds(0)
+                        this.dateSelected.setSeconds(0)
+                    }
                     this.dateSelected.setHours(hours)
                     this.dateSelected.setMinutes(minutes)
                 }
@@ -378,6 +405,22 @@
                         disabled = hour > maxHours
                     }
                 }
+                if (this.unselectableTimes) {
+                    if (!disabled) {
+                        if (this.minutesSelected !== null) {
+                            const unselectable = this.unselectableTimes.filter((time) => {
+                                return time.getHours() === hour &&
+                                    time.getMinutes() === this.minutesSelected
+                            })
+                            disabled = unselectable.length > 0
+                        } else {
+                            const unselectable = this.unselectableTimes.filter((time) => {
+                                return time.getHours() === hour
+                            })
+                            disabled = unselectable.length === this.minutes.length
+                        }
+                    }
+                }
                 return disabled
             },
 
@@ -398,6 +441,15 @@
                                 const minMinutes = this.maxTime.getMinutes()
                                 disabled = this.hoursSelected === maxHours && minute > minMinutes
                             }
+                        }
+                    }
+                    if (this.unselectableTimes) {
+                        if (!disabled) {
+                            const unselectable = this.unselectableTimes.filter((time) => {
+                                return time.getHours() === this.hoursSelected &&
+                                    time.getMinutes() === minute
+                            })
+                            disabled = unselectable.length > 0
                         }
                     }
                 }
@@ -459,8 +511,16 @@
             onChangeNativePicker(event) {
                 const date = event.target.value
                 if (date) {
-                    const dateString = new Date().toLocaleDateString() + ' ' + date
-                    this.dateSelected = new Date(Date.parse(dateString))
+                    if (this.dateSelected && !isNaN(this.dateSelected)) {
+                        this.dateSelected = new Date(this.dateSelected)
+                    } else {
+                        this.dateSelected = new Date()
+                        this.dateSelected.setMilliseconds(0)
+                        this.dateSelected.setSeconds(0)
+                    }
+                    const time = date.split(':')
+                    this.dateSelected.setHours(parseInt(time[0], 10))
+                    this.dateSelected.setMinutes(parseInt(time[1], 10))
                 } else {
                     this.dateSelected = null
                 }

@@ -59,7 +59,6 @@
                 this.$destroy()
                 throw new Error('You should wrap bTabItem on a bTabs')
             }
-
             this.$parent.tabItems.push(this)
         },
         beforeDestroy() {

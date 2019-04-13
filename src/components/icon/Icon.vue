@@ -1,6 +1,6 @@
 <template>
     <span class="icon" :class="[newType, size]">
-        <i :class="[newPack, newIcon, newCustomSize, customClass]"></i>
+        <i :class="[newPack, newIcon, newCustomSize, customClass]"/>
     </span>
 </template>
 
@@ -8,7 +8,7 @@
     import config from '../../utils/config'
 
     export default {
-        name: 'bIcon',
+        name: 'BIcon',
         props: {
             type: String,
             pack: String,
@@ -18,11 +18,6 @@
             customClass: String,
             both: Boolean // This is used internally to show both MDI and FA icon
         },
-        data() {
-            return {
-                newPack: this.pack || config.defaultIconPack
-            }
-        },
         computed: {
             /**
              * Internal icon name based on the pack.
@@ -30,11 +25,20 @@
              * internal icons are always MDI.
              */
             newIcon() {
-                if (!this.both) return `${this.newPack}-${this.icon}`
+                if (!this.both) {
+                    if (this.newPack === 'mdi') {
+                        return `${this.newPack}-${this.icon}`
+                    } else {
+                        return `fa-${this.icon}`
+                    }
+                }
 
                 return this.newPack === 'mdi'
                     ? `${this.newPack}-${this.icon}`
-                    : `${this.newPack}-${this.getEquivalentIconOf(this.icon)}`
+                    : `fa-${this.getEquivalentIconOf(this.icon)}`
+            },
+            newPack() {
+                return this.pack || config.defaultIconPack
             },
             newType() {
                 if (!this.type) return
@@ -51,15 +55,12 @@
                 const defaultSize = this.newPack === 'mdi'
                     ? 'mdi-24px'
                     : 'fa-lg'
-
                 const mediumSize = this.newPack === 'mdi'
                     ? 'mdi-36px'
                     : 'fa-2x'
-
                 const largeSize = this.newPack === 'mdi'
                     ? 'mdi-48px'
                     : 'fa-3x'
-
                 switch (this.size) {
                     case 'is-small': return
                     case 'is-medium': return mediumSize

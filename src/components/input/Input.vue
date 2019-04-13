@@ -4,7 +4,7 @@
             v-if="type !== 'textarea'"
             ref="input"
             class="input"
-            :class="[statusType, size]"
+            :class="inputClasses"
             :type="newType"
             :autocomplete="newAutocomplete"
             :maxlength="maxlength"
@@ -18,36 +18,34 @@
             v-else
             ref="textarea"
             class="textarea"
-            :class="[statusType, size]"
+            :class="inputClasses"
             :maxlength="maxlength"
             :value="newValue"
             v-bind="$attrs"
             @input="onInput"
             @blur="onBlur"
-            @focus="onFocus">
-        </textarea>
+            @focus="onFocus"/>
 
         <b-icon
             v-if="icon"
             class="is-left"
             :icon="icon"
             :pack="iconPack"
-            :size="size">
-        </b-icon>
+            :size="iconSize"/>
 
         <b-icon
             v-if="!loading && (passwordReveal || statusType)"
             class="is-right"
             :class="{ 'is-clickable': passwordReveal }"
             :icon="passwordReveal ? passwordVisibleIcon : statusTypeIcon"
-            :size="size"
+            :pack="iconPack"
+            :size="iconSize"
             :type="!passwordReveal ? statusType : 'is-primary'"
             both
-            @click.native="togglePasswordVisibility">
-        </b-icon>
+            @click.native="togglePasswordVisibility"/>
 
         <small
-            v-if="maxlength && hasCounter"
+            v-if="maxlength && hasCounter && type !== 'number'"
             class="help counter"
             :class="{ 'is-invisible': !isFocused }">
             {{ valueLength }} / {{ maxlength }}
@@ -61,12 +59,12 @@
     import FormElementMixin from '../../utils/FormElementMixin'
 
     export default {
-        name: 'bInput',
-        inheritAttrs: false,
-        mixins: [FormElementMixin],
+        name: 'BInput',
         components: {
             [Icon.name]: Icon
         },
+        mixins: [FormElementMixin],
+        inheritAttrs: false,
         props: {
             value: [Number, String],
             type: {
@@ -94,6 +92,7 @@
             rootClasses() {
                 return [
                     this.iconPosition,
+                    this.size,
                     {
                         'is-expanded': this.expanded,
                         'is-loading': this.loading,
@@ -101,10 +100,13 @@
                     }
                 ]
             },
-
-            /**
-             * Check if have any icon in the right side.
-             */
+            inputClasses() {
+                return [
+                    this.statusType,
+                    this.size,
+                    { 'is-rounded': this.rounded }
+                ]
+            },
             hasIconRight() {
                 return this.passwordReveal || this.loading || this.statusType
             },
@@ -151,7 +153,12 @@
              * Get value length
              */
             valueLength() {
-                return this.newValue ? this.newValue.length : 0
+                if (typeof this.newValue === 'string') {
+                    return this.newValue.length
+                } else if (typeof this.newValue === 'number') {
+                    return this.newValue.toString().length
+                }
+                return 0
             }
         },
         watch: {

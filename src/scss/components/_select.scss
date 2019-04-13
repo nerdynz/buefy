@@ -20,9 +20,4 @@
         color: rgba($grey, 0.7);
     }
 
-    &.is-readonly {
-        &:after {
-            display: none;
-        }
-    }
 }

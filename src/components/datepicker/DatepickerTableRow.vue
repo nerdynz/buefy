@@ -1,7 +1,8 @@
 <template>
     <div class="datepicker-row">
         <template v-for="(day, index) in week">
-            <a v-if="selectableDate(day) && !disabled"
+            <a
+                v-if="selectableDate(day) && !disabled"
                 :key="index"
                 :class="[classObject(day), {'has-event':eventsDateMatch(day)}, indicators]"
                 class="datepicker-cell"
@@ -14,11 +15,16 @@
                 {{ day.getDate() }}
 
                 <div class="events" v-if="eventsDateMatch(day)">
-                    <div class="event" :class="event.type" v-for="(event, index) in eventsDateMatch(day)" :key="index"></div>
+                    <div
+                        class="event"
+                        :class="event.type"
+                        v-for="(event, index) in eventsDateMatch(day)"
+                        :key="index"/>
                 </div>
-                
+
             </a>
-            <div v-else
+            <div
+                v-else
                 :key="index"
                 :class="classObject(day)"
                 class="datepicker-cell">
@@ -30,7 +36,7 @@
 
 <script>
     export default {
-        name: 'bDatepickerTableRow',
+        name: 'BDatepickerTableRow',
         props: {
             selectedDate: Date,
             week: {
@@ -45,6 +51,8 @@
             maxDate: Date,
             disabled: Boolean,
             unselectableDates: Array,
+            unselectableDaysOfWeek: Array,
+            selectableDates: Array,
             events: Array,
             indicators: String
         },
@@ -66,12 +74,34 @@
 
                 validity.push(day.getMonth() === this.month)
 
+                if (this.selectableDates) {
+                    for (let i = 0; i < this.selectableDates.length; i++) {
+                        const enabledDate = this.selectableDates[i]
+                        if (day.getDate() === enabledDate.getDate() &&
+                            day.getFullYear() === enabledDate.getFullYear() &&
+                            day.getMonth() === enabledDate.getMonth()) {
+                            return true
+                        } else {
+                            validity.push(false)
+                        }
+                    }
+                }
+
                 if (this.unselectableDates) {
                     for (let i = 0; i < this.unselectableDates.length; i++) {
                         const disabledDate = this.unselectableDates[i]
-                        validity.push((day.getDate() !== disabledDate.getDate() ||
+                        validity.push(
+                            day.getDate() !== disabledDate.getDate() ||
                             day.getFullYear() !== disabledDate.getFullYear() ||
-                            day.getMonth() !== disabledDate.getMonth()))
+                            day.getMonth() !== disabledDate.getMonth()
+                        )
+                    }
+                }
+
+                if (this.unselectableDaysOfWeek) {
+                    for (let i = 0; i < this.unselectableDaysOfWeek.length; i++) {
+                        const dayOfWeek = this.unselectableDaysOfWeek[i]
+                        validity.push(day.getDay() !== dayOfWeek)
                     }
                 }
 

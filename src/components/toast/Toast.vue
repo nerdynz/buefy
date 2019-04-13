@@ -6,7 +6,7 @@
             v-show="isActive"
             class="toast"
             :class="[type, position]">
-            <div v-html="message"></div>
+            <div v-html="message"/>
         </div>
     </transition>
 </template>
@@ -16,6 +16,7 @@
     import NoticeMixin from '../../utils/NoticeMixin.js'
 
     export default {
+        name: 'BToast',
         mixins: [NoticeMixin],
         data() {
             return {

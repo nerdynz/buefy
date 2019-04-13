@@ -1,58 +1,51 @@
 <template>
     <div class="b-table" :class="{ 'is-loading': loading }">
-        <div v-if="mobileCards && hasSortableColumns" class="field is-hidden-tablet">
-            <div v-if="mobileCards && hasSortableColumns" class="field is-hidden-tablet has-addons">
-                <b-select v-model="mobileSort" expanded>
-                    <option v-for="(column, index) in columns"
-                        v-if="column.sortable"
-                        :key="index"
-                        :value="column">
-                        {{ column.label }}
-                    </option>
-                </b-select>
-                <p class="control">
-                    <button class="button is-primary" @click="sort(mobileSort)">
-                        <b-icon
-                            v-show="currentSortColumn === mobileSort"
-                            icon="arrow-up"
-                            both
-                            size="is-small"
-                            :class="{ 'is-desc': !isAsc }">
-                        </b-icon>
-                    </button>
-                </p>
-            </div>
-        </div>
+        <b-table-mobile-sort
+            v-if="mobileCards && hasSortablenewColumns"
+            :current-sort-column="currentSortColumn"
+            :is-asc="isAsc"
+            :columns="newColumns"
+            @sort="(column) => sort(column)"
+        />
 
         <div class="table-wrapper">
             <table
-                ref="b-table-ref"
                 class="table"
+                :class="tableClasses"
                 :tabindex="!focusable ? false : 0"
-                :class="{
-                    'is-bordered': bordered,
-                    'is-striped': striped,
-                    'is-narrow': narrowed,
-                    'is-hoverable': hoverable || focusable,
-                    'has-mobile-cards': mobileCards
-                }"
                 @keydown.prevent.up="pressedArrow(-1)"
                 @keydown.prevent.down="pressedArrow(1)">
-                <thead v-if="columns.length" ref="tableHead">
+                <thead v-if="newColumns.length">
                     <tr>
-                        <th v-if="detailed" width="40px"></th>
+                        <th v-if="detailed" width="40px"/>
                         <th class="checkbox-cell" v-if="checkable">
-                            <b-checkbox :value="isAllChecked" @change.native="checkAll"></b-checkbox>
+                            <b-checkbox
+                                :value="isAllChecked"
+                                :disabled="isAllUncheckable"
+                                @change.native="checkAll"/>
                         </th>
-                        <th v-for="(column, index) in columns"
-                            v-if="column.visible"
+                        <th
+                            v-for="(column, index) in newColumns"
+                            v-if="column.visible || column.visible === undefined"
                             :key="index"
-                            :class="{ 'is-current-sort': currentSortColumn === column, 'is-sortable': column.sortable }"
+                            :class="{
+                                'is-current-sort': currentSortColumn === column,
+                                'is-sortable': column.sortable
+                            }"
                             :style="{ width: column.width + 'px' }"
                             @click.stop="sort(column)">
-                            <div class="th-wrap" :class="{ 'is-numeric': column.numeric, 'is-centered': column.centered }">
-
-                                <slot v-if="$scopedSlots.header" name="header" :column="column" :index="index"></slot>
+                            <div
+                                class="th-wrap"
+                                :class="{
+                                    'is-numeric': column.numeric,
+                                    'is-centered': column.centered
+                            }">
+                                <slot
+                                    v-if="$scopedSlots.header"
+                                    name="header"
+                                    :column="column"
+                                    :index="index"
+                                />
                                 <template v-else>{{ column.label }}</template>
 
                                 <b-icon
@@ -60,8 +53,7 @@
                                     icon="arrow-up"
                                     both
                                     size="is-small"
-                                    :class="{ 'is-desc': !isAsc }">
-                                </b-icon>
+                                    :class="{ 'is-desc': !isAsc }"/>
                             </div>
                         </th>
                     </tr>
@@ -76,27 +68,60 @@
                             @click="selectRow(row)"
                             @dblclick="$emit('dblclick', row)">
 
-                            <td v-if="detailed">
-                                <a role="button" @click.stop="toggleDetails(row)">
-                                    <b-icon icon="chevron-right"
+                            <td
+                                v-if="detailed"
+                                class="chevron-cell"
+                            >
+                                <a
+                                    v-if="hasDetailedVisible(row)"
+                                    role="button"
+                                    @click.stop="toggleDetails(row)">
+                                    <b-icon
+                                        icon="chevron-right"
                                         both
-                                        :class="{'is-expanded': isVisibleDetailRow(row)}">
-                                    </b-icon>
+                                        :class="{'is-expanded': isVisibleDetailRow(row)}"/>
                                 </a>
                             </td>
 
                             <td class="checkbox-cell" v-if="checkable">
-                                <b-checkbox :value="isRowChecked(row)" @change.native="checkRow(row)"></b-checkbox>
+                                <b-checkbox
+                                    :disabled="!isRowCheckable(row)"
+                                    :value="isRowChecked(row)"
+                                    @change.native="checkRow(row)"
+                                />
                             </td>
 
-                            <slot :row="row" :index="index"></slot>
+                            <slot
+                                v-if="$scopedSlots.default"
+                                :row="row"
+                                :index="index"
+                            />
+                            <template v-else>
+                                <BTableColumn
+                                    v-for="column in newColumns"
+                                    v-bind="column"
+                                    :key="column.field"
+                                    internal>
+                                    <span
+                                        v-if="column.renderHtml"
+                                        v-html="getValueByPath(row, column.field)"
+                                    />
+                                    <template v-else>
+                                        {{ getValueByPath(row, column.field) }}
+                                    </template>
+                                </BTableColumn>
+                            </template>
                         </tr>
 
-                        <tr v-if="detailed && isVisibleDetailRow(row)"
-                            class="detail">
+                        <!-- Do not add `key` here (breaks details) -->
+                        <!-- eslint-disable-next-line -->
+                        <tr v-if="detailed && isVisibleDetailRow(row)" class="detail">
                             <td :colspan="columnCount">
                                 <div class="detail-container">
-                                    <slot name="detail" :row="row" :index="index"></slot>
+                                    <slot
+                                        name="detail"
+                                        :row="row"
+                                        :index="index"/>
                                 </div>
                             </td>
                         </tr>
@@ -105,15 +130,15 @@
                 <tbody v-else>
                     <tr class="is-empty">
                         <td :colspan="columnCount">
-                            <slot name="empty"></slot>
+                            <slot name="empty"/>
                         </td>
                     </tr>
                 </tbody>
                 <tfoot v-if="$slots.footer !== undefined">
                     <tr class="table-footer">
-                        <slot name="footer" v-if="hasCustomFooterSlot()"></slot>
+                        <slot name="footer" v-if="hasCustomFooterSlot()"/>
                         <th :colspan="columnCount" v-else>
-                            <slot name="footer"></slot>
+                            <slot name="footer"/>
                         </th>
                     </tr>
                 </tfoot>
@@ -122,7 +147,7 @@
 
         <div v-if="checkable || paginated" class="level">
             <div class="level-left">
-                <slot name="bottom-left"></slot>
+                <slot name="bottom-left"/>
             </div>
 
             <div class="level-right">
@@ -131,9 +156,9 @@
                         :total="newDataTotal"
                         :per-page="perPage"
                         :simple="paginationSimple"
+                        :size="paginationSize"
                         :current="newCurrentPage"
-                        @change="pageChanged">
-                    </b-pagination>
+                        @change="pageChanged"/>
                 </div>
             </div>
         </div>
@@ -142,24 +167,32 @@
 
 <script>
     import { getValueByPath, indexOf } from '../../utils/helpers'
-    import Pagination from '../pagination'
-    import Icon from '../icon'
-    import { Checkbox } from '../checkbox'
-    // import tableDragger from 'table-dragger'
+    import { Checkbox as BCheckbox } from '../checkbox'
+    import BPagination from '../pagination'
+    import BIcon from '../icon'
+
+    import BTableMobileSort from './TableMobileSort'
+    import BTableColumn from './TableColumn'
 
     export default {
-        name: 'bTable',
+        name: 'BTable',
         components: {
-            [Pagination.name]: Pagination,
-            [Icon.name]: Icon,
-            [Checkbox.name]: Checkbox
+            BPagination,
+            BIcon,
+            BCheckbox,
+            BTableMobileSort,
+            BTableColumn
         },
         props: {
-            datakey: String,
             data: {
                 type: Array,
                 default: () => []
             },
+            columns: {
+                type: Array,
+                default: () => []
+            },
+            datakey: String,
             bordered: Boolean,
             striped: Boolean,
             narrowed: Boolean,
@@ -170,6 +203,10 @@
             selected: Object,
             focusable: Boolean,
             customIsChecked: Function,
+            isRowCheckable: {
+                type: Function,
+                default: () => true
+            },
             checkedRows: {
                 type: Array,
                 default: () => []
@@ -193,6 +230,7 @@
                 default: 20
             },
             paginationSimple: Boolean,
+            paginationSize: String,
             backendSorting: Boolean,
             rowClass: {
                 type: Function,
@@ -202,6 +240,10 @@
                 type: Array,
                 default: () => []
             },
+            hasDetailedVisible: {
+                type: Function,
+                default: () => true
+            },
             detailKey: {
                 type: String,
                 default: ''
@@ -210,12 +252,12 @@
             total: {
                 type: [Number, String],
                 default: 0
-            },
-            dragHandle: String
+            }
         },
         data() {
             return {
-                columns: [],
+                getValueByPath,
+                newColumns: [...this.columns],
                 visibleDetailRows: this.openedDetailed,
                 newData: this.data,
                 newDataTotal: this.backendPagination ? this.total : this.data.length,
@@ -223,100 +265,24 @@
                 newCurrentPage: this.currentPage,
                 currentSortColumn: {},
                 isAsc: true,
-                mobileSort: {},
                 firstTimeSort: true, // Used by first time initSort
                 _isTable: true // Used by TableColumn
             }
         },
-        watch: {
-            /**
-             * When data prop change:
-             *   1. Update internal value.
-             *   2. Reset columns (thead), in case it's on a v-for loop.
-             *   3. Sort again if it's not backend-sort.
-             *   4. Set new total if it's not backend-paginated.
-             */
-            data(value) {
-                // Save columns before resetting
-                const columns = this.columns
-
-                this.columns = []
-                this.newData = value
-
-                // Prevent table from being headless, data could change and created hook
-                // on column might not trigger
-                this.$nextTick(() => {
-                    if (!this.columns.length) this.columns = columns
-                })
-
-                if (!this.backendSorting) {
-                    this.sort(this.currentSortColumn, true)
-                }
-                if (!this.backendPagination) {
-                    this.newDataTotal = value.length
-                }
-            },
-
-            /**
-             * When Pagination total change, update internal total
-             * only if it's backend-paginated.
-             */
-            total(newTotal) {
-                if (!this.backendPagination) return
-
-                this.newDataTotal = newTotal
-            },
-
-            /**
-             * When mobileSort change (mobile dropdown) call sort method.
-             */
-            mobileSort(column) {
-                if (this.currentSortColumn === column) return
-
-                this.sort(column)
-            },
-
-            /**
-             * When currentSortColumn change, update mobileSort.
-             */
-            currentSortColumn(column) {
-                this.mobileSort = column
-            },
-
-            /**
-             * When checkedRows prop change, update internal value without
-             * mutating original data.
-             */
-            checkedRows(rows) {
-                this.newCheckedRows = [...rows]
-            },
-
-            /**
-             * When columns change, call initSort only first time (For example async data).
-             */
-            columns(columns) {
-                if (columns.length && this.firstTimeSort) {
-                    this.initSort()
-                    this.firstTimeSort = false
-                } else if (columns.length) {
-                    for (let i = 0; i < columns.length; i++) {
-                        if (columns[i].newKey === this.currentSortColumn.newKey) {
-                            this.currentSortColumn = columns[i]
-                            break
-                        }
-                    }
-                }
-            },
-
-            /**
-            * When the user wants to control the detailed rows via props.
-            * Or wants to open the details of certain row with the router for example.
-            */
-            openedDetailed(expandedRows) {
-                this.visibleDetailRows = expandedRows
-            }
-        },
         computed: {
+            tableClasses() {
+                return {
+                    'is-bordered': this.bordered,
+                    'is-striped': this.striped,
+                    'is-narrow': this.narrowed,
+                    'has-mobile-cards': this.mobileCards,
+                    'is-hoverable': (
+                        (this.hoverable || this.focusable) &&
+                        this.visibleData.length
+                    )
+                }
+            },
+
             /**
              * Splitted data based on the pagination.
              */
@@ -339,17 +305,29 @@
              * Check if all rows in the page are checked.
              */
             isAllChecked() {
-                const isAllChecked = this.visibleData.some(currentVisibleRow => {
-                    return indexOf(this.checkedRows, currentVisibleRow, this.customIsChecked) < 0
+                const validVisibleData = this.visibleData.filter(
+                        (row) => this.isRowCheckable(row))
+                if (validVisibleData.length === 0) return false
+                const isAllChecked = validVisibleData.some((currentVisibleRow) => {
+                    return indexOf(this.newCheckedRows, currentVisibleRow, this.customIsChecked) < 0
                 })
                 return !isAllChecked
             },
 
             /**
+             * Check if all rows in the page are checkable.
+             */
+            isAllUncheckable() {
+                const validVisibleData = this.visibleData.filter(
+                        (row) => this.isRowCheckable(row))
+                return validVisibleData.length === 0
+            },
+
+            /**
              * Check if has any sortable column.
              */
-            hasSortableColumns() {
-                return this.columns.some(column => {
+            hasSortablenewColumns() {
+                return this.newColumns.some((column) => {
                     return column.sortable
                 })
             },
@@ -358,14 +336,100 @@
              * Return total column count based if it's checkable or expanded
              */
             columnCount() {
-                let count = this.columns.length
+                let count = this.newColumns.length
                 count += this.checkable ? 1 : 0
                 count += this.detailed ? 1 : 0
 
                 return count
             }
         },
+        watch: {
+            /**
+             * When data prop change:
+             *   1. Update internal value.
+             *   2. Reset newColumns (thead), in case it's on a v-for loop.
+             *   3. Sort again if it's not backend-sort.
+             *   4. Set new total if it's not backend-paginated.
+             */
+            data(value) {
+                // Save newColumns before resetting
+                const newColumns = this.newColumns
+
+                this.newColumns = []
+                this.newData = value
+
+                // Prevent table from being headless, data could change and created hook
+                // on column might not trigger
+                this.$nextTick(() => {
+                    if (!this.newColumns.length) this.newColumns = newColumns
+                })
+
+                if (!this.backendSorting) {
+                    this.sort(this.currentSortColumn, true)
+                }
+                if (!this.backendPagination) {
+                    this.newDataTotal = value.length
+                }
+            },
+
+            /**
+             * When Pagination total change, update internal total
+             * only if it's backend-paginated.
+             */
+            total(newTotal) {
+                if (!this.backendPagination) return
+
+                this.newDataTotal = newTotal
+            },
+
+            /**
+             * When checkedRows prop change, update internal value without
+             * mutating original data.
+             */
+            checkedRows(rows) {
+                this.newCheckedRows = [...rows]
+            },
+
+            columns(value) {
+                this.newColumns = [...value]
+            },
+
+            /**
+             * When newColumns change, call initSort only first time (For example async data).
+             */
+            newColumns(newColumns) {
+                if (newColumns.length && this.firstTimeSort) {
+                    this.initSort()
+                    this.firstTimeSort = false
+                } else if (newColumns.length) {
+                    if (this.currentSortColumn.field) {
+                        for (let i = 0; i < newColumns.length; i++) {
+                            if (newColumns[i].field === this.currentSortColumn.field) {
+                                this.currentSortColumn = newColumns[i]
+                                break
+                            }
+                        }
+                    }
+                }
+            },
+
+            /**
+            * When the user wants to control the detailed rows via props.
+            * Or wants to open the details of certain row with the router for example.
+            */
+            openedDetailed(expandedRows) {
+                this.visibleDetailRows = expandedRows
+            },
+
+            currentPage(newVal) {
+                this.newCurrentPage = newVal
+            }
+        },
         methods: {
+            dragDropRow(ev) {
+                this.$emit('row-drag-droped', ev.oldIndex, ev.newIndex) // cover typo..
+                this.$emit('row-drag-dropped', ev.oldIndex, ev.newIndex)
+            },
             /**
              * Sort an array by key without mutating original data.
              * Call the user sort function if it was passed.
@@ -374,7 +438,7 @@
                 let sorted = []
                 // Sorting without mutating original data
                 if (fn && typeof fn === 'function') {
-                    sorted = [...array].sort(fn)
+                    sorted = [...array].sort((a, b) => fn(a, b, isAsc))
                 } else {
                     sorted = [...array].sort((a, b) => {
                         // Get nested values from objects
@@ -385,12 +449,8 @@
                         if (!newB && newB !== 0) return -1
                         if (newA === newB) return 0
 
-                        newA = (typeof newA === 'string')
-                            ? newA.toUpperCase()
-                            : newA
-                        newB = (typeof newB === 'string')
-                            ? newB.toUpperCase()
-                            : newB
+                        newA = (typeof newA === 'string') ? newA.toUpperCase() : newA
+                        newB = (typeof newB === 'string') ? newB.toUpperCase() : newB
 
                         return isAsc
                             ? newA > newB ? 1 : -1
@@ -418,7 +478,12 @@
                     this.$emit('sort', column.field, this.isAsc ? 'asc' : 'desc')
                 }
                 if (!this.backendSorting) {
-                    this.newData = this.sortBy(this.newData, column.field, column.customSort, this.isAsc)
+                    this.newData = this.sortBy(
+                        this.newData,
+                        column.field,
+                        column.customSort,
+                        this.isAsc
+                    )
                 }
                 this.currentSortColumn = column
             },
@@ -427,7 +492,7 @@
              * Check if the row is checked (is added to the array).
              */
             isRowChecked(row) {
-                return indexOf(this.checkedRows, row, this.customIsChecked) >= 0
+                return indexOf(this.newCheckedRows, row, this.customIsChecked) >= 0
             },
 
             /**
@@ -446,10 +511,12 @@
              */
             checkAll() {
                 const isAllChecked = this.isAllChecked
-                this.visibleData.forEach(currentRow => {
+                this.visibleData.forEach((currentRow) => {
                     this.removeCheckedRow(currentRow)
                     if (!isAllChecked) {
-                        this.newCheckedRows.push(currentRow)
+                        if (this.isRowCheckable(currentRow)) {
+                            this.newCheckedRows.push(currentRow)
+                        }
                     }
                 })
 
@@ -499,6 +566,7 @@
             pageChanged(page) {
                 this.newCurrentPage = page > 0 ? page : 1
                 this.$emit('page-change', this.newCurrentPage)
+                this.$emit('update:currentPage', this.newCurrentPage)
             },
 
             /**
@@ -550,7 +618,9 @@
             checkPredefinedDetailedRows() {
                 const defaultExpandedRowsDefined = this.openedDetailed.length > 0
                 if (defaultExpandedRowsDefined && !this.detailKey.length) {
-                    throw new Error('If you set a predefined opened-detailed, you must provide an unique key using the prop "detail-key"')
+                    var err ='If you set a predefined opened-detailed,' +
+                    ' you must provide an unique key using the prop "detail-key"'
+                    throw new Error(err)
                 }
             },
 
@@ -593,10 +663,6 @@
                 this.$el.querySelector('table').focus()
             },
 
-            dragDropRow(ev) {
-                this.$emit('row-drag-droped', ev.oldIndex, ev.newIndex) // cover typo..
-                this.$emit('row-drag-dropped', ev.oldIndex, ev.newIndex)
-            },
             /**
              * Initial sorted column based on the default-sort prop.
              */
@@ -615,7 +681,7 @@
                     sortField = this.defaultSort
                 }
 
-                this.columns.forEach(column => {
+                this.newColumns.forEach((column) => {
                     if (column.field === sortField) {
                         this.isAsc = sortDirection.toLowerCase() !== 'desc'
                         this.sort(column, true)
@@ -624,30 +690,8 @@
             }
         },
 
-        created() {
-        },
-
         mounted() {
             this.checkPredefinedDetailedRows()
-            // const table = this.$refs['b-table-ref']
-            // try {
-            //     var dragger = tableDragger(table, {
-            //         mode: 'row',
-            //         dragHandler: this.dragHandle || '.drag-handle',
-            //         onlyBody: true,
-            //         animation: 300
-            //     })
-
-            //     dragger.on('drop', (from, to) => {
-            //         from = from - 1
-            //         to = to - 1
-            //         this.$emit('row-drag-droped', from, to)
-            //     })
-            // } catch (e) {
-            //     if (e.message !== 'table-dragger: no element match dragHandler selector') {
-            //         throw e
-            //     }
-            // }
         }
     }
 </script>

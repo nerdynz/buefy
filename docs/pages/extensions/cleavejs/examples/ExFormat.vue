@@ -3,15 +3,15 @@
         <b-field>
             <b-input
                 placeholder="Credit Card"
-                v-cleave="masks.creditCard"
-            />
+                v-cleave="masks.creditCard">
+            </b-input>
         </b-field>
 
         <b-field>
             <b-input
                 placeholder="Numeral"
-                v-cleave="masks.numeral"
-            />
+                v-cleave="masks.numeral">
+            </b-input>
         </b-field>
 
         <b-field :addons="false">
@@ -19,8 +19,8 @@
                 placeholder="Custom"
                 v-model="value"
                 v-cleave="masks.custom"
-                @input.native="getRawValue"
-            />
+                @input.native="getRawValue">
+            </b-input>
             <p><b>Formatted value (v-model)</b>: {{ value }}</p>
             <p><b>Raw value</b>: {{ rawValue }}</p>
         </b-field>

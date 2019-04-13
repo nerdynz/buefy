@@ -1,6 +1,6 @@
 let config = {
     defaultContainerElement: null,
-    defaultIconPack: 'fa',
+    defaultIconPack: 'fal',
     defaultDialogConfirmText: null,
     defaultDialogCancelText: null,
     defaultSnackbarDuration: 3500,

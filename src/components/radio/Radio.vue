@@ -1,26 +1,29 @@
 <template>
-    <label class="b-radio radio"
+    <label
+        class="b-radio radio"
         ref="label"
         :class="[size, { 'is-disabled': disabled }]"
         :disabled="disabled"
         :tabindex="disabled ? false : 0"
         @keydown.prevent.enter.space="$refs.label.click()">
-        <input v-model="newValue"
+        <input
+            v-model="newValue"
             type="radio"
             :disabled="disabled"
             :name="name"
             :value="nativeValue">
-        <span class="check"></span>
-        <span class="control-label"><slot></slot></span>
+        <span class="check" :class="type" />
+        <span class="control-label"><slot/></span>
     </label>
 </template>
 
 <script>
     export default {
-        name: 'bRadio',
+        name: 'BRadio',
         props: {
-            value: {},
-            nativeValue: {},
+            value: [String, Number, Boolean, Function, Object, Array, Symbol],
+            nativeValue: [String, Number, Boolean, Function, Object, Array, Symbol],
+            type: String,
             disabled: Boolean,
             name: String,
             size: String
@@ -37,7 +40,6 @@
             value(value) {
                 this.newValue = value
             },
-
             /**
              * Emit input event to update the user v-model.
              */

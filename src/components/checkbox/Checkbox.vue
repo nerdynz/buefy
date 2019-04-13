@@ -21,7 +21,7 @@
 
 <script>
     export default {
-        name: 'bCheckbox',
+        name: 'BCheckbox',
         props: {
             value: [String, Number, Boolean, Function, Object, Array, Symbol],
             nativeValue: [String, Number, Boolean, Function, Object, Array, Symbol],

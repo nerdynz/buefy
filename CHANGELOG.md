@@ -1,14 +1,183 @@
 # Buefy Changelog
 
+## 0.6.7
+
+### New features
+
+* Add ``auto-close`` and ``duration`` props to message
+* **Table improved**: can change columns dynamically
+
+### Fixes and changes
+
+* #839 Fix ``icon-pack`` from icon to be reactive
+* #840 Fix loading position to tagInput (thanks @adrlen)
+* #852 Fix label class to field when horizontal
+* #872 Fix datepicker default formatter
+
+## 0.6.6
+
+### New features
+
+* **Update Bulma to 0.7.1**
+* Add ``header`` slot to autocomplete
+* Add ``type`` prop to checkbox and radio
+* Add ``on-paste-separators`` and ``before-adding`` props to tagInput
+* #830 Add ``ellipsis`` prop to tagInput and tag components
+
+### Fixes and changes
+
+* #746 Fix default ``dateFormatter`` function to datepicker
+* #755 Fix arrow centered when table detail (thanks @wanxe)
+* #787 Fix type in horizontal field when message is empty
+* #814 Reset scroll to modal before destroy
+* #481 Fix tagInput height to match other inputs
+
+## 0.6.5
+
+* Revert some changes on Checkbox, CheckboxButton, Radio, RadioButton, Select and Switch, working as before now
+* #711 Fix click event to switch (thanks @adrlen)
+* #712 Fix SSR support (thanks @anteriovieira)
+* #719 Fix ``header`` slot to tabItem
+* #718 Fix ``changeMonth`` and ``changeYear`` events to datepicker in ``change-month`` and ``change-year``
+* #727 Fix upload check file
+* #730 Fix field with addons not updating on re-render (tanks @arlen)
+
+## 0.6.4
+
+### New features
+
+* **Add nuxt-buefy on docs**, [see here](https://buefy.github.io/#/documentation/start) (thanks @anteriovieira)
+* Add ``indefinite`` prop to snackbar
+* Add ``header`` slot to datepicker
+* Add ``header`` slot to tabItem
+* #485 Add ``custom-class`` prop to field (thanks @docnoe)
+* #509 Add autocomplete slot support to taginput (thanks @gkinsman)
+* #581 Add ``is-row-checkable`` prop to table (thanks @jvmonjo)
+* #602 Add ``changeMonth`` and ``changeYear`` events to datepicker
+* #604 Add ``remove-on-keys`` prop to taginput, allowing to remove last tag (thanks @adrlen)
+* #609 Add ``is-full-page`` prop to loading, to limit it to its container (thanks @adrlen)
+* #610 Add ``visible`` prop to tabItem
+* #644 Add ``clear-on-select`` prop to autocomplete (thanks @raniesantos)
+* #645 Add ``selectable-dates`` prop to datepicker (thanks @pip63)
+* #682 Add ``has-detailed-visible`` prop to table (thanks @wanxe)
+* #687 Add ``focus-on`` prop to dialog
+
+### Fixes and changes
+
+* #576 Fix upload check file type
+* #586 Fix dropdown change event
+* #593 Fix timepicker update only time of Date object
+* #599 Fix ``on-cancel`` prop to dialog, get called when clicking confirm
+* #648 Fix dropdown emit change event (thanks @adrlen)
+* #670 Fix tabs emit change event (thanks @adrlen)
+* #686 Remove 'is-light' color to cancel button of dialog
+
+## 0.6.3
+
+### New features
+
+* **New extension: Sortable.js**, [see here](https://buefy.github.io/#/extensions/sortablejs)
+* **Update Bulma to 0.6.2**
+* **Add Font Awesome 5 support** (http://fontawesome.com/)
+* Add ``columns`` prop to table, you can now pass an array instead of adding scoped slots (for simple tables)
+* Add ``rounded`` prop to Input, Select, Autocomplete, Datepicker and Timepicker, Pagination
+* Add "is-toggle-rounded" type to Tabs
+* Add ``open`` prop to collapse ``trigger`` slot
+* Add ``native`` prop to upload
+* #222 Add ``open-on-focus`` prop to autocomplete (good to simulate a select element)
+* #482 Add ``allow-new`` prop to taginput
+* #483 Add ``unselectable-days-of-week`` prop to datepicker
+* #487 Add ``icon-size`` prop to message
+* #492 Add isAsc parameter to ``custom-sort`` function of table (thanks @frantic1048)
+* #494 Add ``unselectable-times`` prop to timepicker
+* #525 Add ``pagination-size`` prop to table (thanks @nateleavitt)
+* #531 Add ``confirm-key-codes`` prop to taginput
+
+### Fixes and changes
+
+* Remove ``max-results`` prop from autocomplete, it now has a scrollbar with all results
+* #493 Fix ``keep-first`` autocomplete prop with async data
+* #498 Fix horizontal field on mobile
+* #500 Fix message position for horizontal field (thanks @electrolinux)
+* #543 Fix dropdown toggle programmatic
+
+## 0.6.2
+
+### New features
+
+* **New component: Tag Input**, [see docs](https://buefy.github.io/#/documentation/taginput) (thanks @jgerbes)
+* #125 Add ``queue`` prop to toast/snackbar and ``defaultNoticeQueue`` constructor option
+    * Note that the animations aren't perfect right now
+* #432 **Datepicker improved**: can add event indicators on it (thanks @chasegiunta)
+* #439 Add support to horizontal field, with the ``horizontal`` prop (thanks @electrolinux)
+* Add ``mobile-native`` prop to datepicker and timepicker
+* Add ``defaultDatepickerMobileNative`` and ``defaultTimepickerMobileNative`` constructor options
+* Add ``events`` prop to modal (to bind events programmatically)
+* Add ``position`` prop to datepicker and timepicker
+* Add ``size`` prop to dialog
+* Add ``tabstop`` and ``disabled`` props to tag
+* Add ``.sync`` option to table ``current-page``
+
+### Fixes and changes
+
+* Maxlength counter for input only shows on focus
+* Add padding to tab content
+* Fix autocomplete with ``keep-first`` selecting on blur when nothing is shown
+* Fix tabs buttons size sometimes flickering
+* #416 Fix pagination color
+* #419 Fix input icon size
+* #428 Fix ``current-page`` from table to be reactive
+* #440 Fix upload input file width (thanks @frantic1048)
+
+## 0.6.1
+
+* #409 Fix notification delete button
+* #410 Fix alert triggering on upload
+
 ## 0.6.0
 
 ### Breaking changes
 
 * Vue 2.5+ is now the minimum required version
-* **Removed** prompt dialog ``inputPlaceholder``, ``inputName`` and ``inputMaxlength`` props
+* Bulma breaking changes, [see changelog](https://github.com/jgthms/bulma/blob/master/CHANGELOG.md#breaking-changes)
+* **Removed** the deprecated prompt dialog ``inputPlaceholder``, ``inputName`` and ``inputMaxlength`` props
+* Buefy now uses [MDI icons from community](https://materialdesignicons.com/) instead, you'll have to change icon names and if you use a CDN you should change:
+
+```html
+<link rel="stylesheet" href="//cdn.materialdesignicons.com/2.0.46/css/materialdesignicons.min.css">
+```
+
+### New features
+
+* **New component: Timepicker**, [see docs](https://buefy.github.io/#/documentation/timepicker)
+* **New component: Checkbox Button**, [see docs](https://buefy.github.io/#/documentation/checkbox)
+* **New docs section: Extensions**, [see here](https://buefy.github.io/#/extensions/cleavejs)
+* Support for Bulma 0.6.1
 * Add ``disabled`` prop to tabItem
+* Add ``focusable`` prop to table
+* Add ``focus()`` method to table
+* Add ``hoverable`` prop to table
+* Add ``custom-size`` prop to icon
+* Add ``custom-class`` prop to icon
+* Add ``detail-key`` and ``opened-detailed`` props to table (thanks @wanxe)
+* Add ``scroll`` prop to modal/dialog (changes what to do with ``<body>`` scrollbar)
+* Add ``parent`` prop to modal, pass a Vue object to it to open component modal programmatically
 * #359 Add ``mobile-modal`` prop to dropdown to enable/disable modal on mobile
+* #365 Add ``src/scss/utils/_all.scss`` for easier modular importing (thanks @gwvt)
+* #377 Add support to MDI icons from community
+* #387 Add ``current-page`` prop to table (thanks @frantic1048)
+* #388 Add ``size`` prop to radio and checkbox
+* #398 Add ``unselectable-dates`` prop to datepicker to disable an array of dates
+* #399 Add configurable closing options for dialog (like modal)
+
+### Fixes
+
+* Update tooltip font size and padding, it's a bit bigger now
+* Update table keyboard navigation, now doesn't require pressing enter and only works when ``focusable``
+* #288 Fix input message from parent field (thanks @yarbshk)
+* #358 Fix modal/dialog shifting content (``scroll`` prop)
 * #380 Fix clearing autocomplete input
+* #395 Fix ref dropdown availability (thanks @frantic1048)
 
 ## 0.5.4
 
